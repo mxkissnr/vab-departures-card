@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="logo.svg" alt="VAB Departures Card" width="120"/>
+</p>
+
+<p align="center">
   <a href="https://github.com/mxkissnr/vab-departures-card/releases/latest">
     <img src="https://img.shields.io/github/v/tag/mxkissnr/vab-departures-card?color=%2341bdf5&label=Version&style=flat-square" alt="Version"/>
   </a>
