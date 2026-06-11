@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.0 — 2026-06-11
+
+### Added
+- **"Jetzt los!" indicator** — when `leave_in_minutes` (walk time from integration) is ≤ `leave_threshold` (default 2 min), the row gets an orange left border + pulsing "Jetzt los!" badge. Requires walk time configured in the VAB integration. Threshold configurable via `leave_threshold` in card YAML ([#7](https://github.com/mxkissnr/vab-departures-card/issues/7))
+
 ## v1.2.0 — 2026-06-11
 
 ### Added
