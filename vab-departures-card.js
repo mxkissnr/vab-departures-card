@@ -158,7 +158,7 @@ class VabDeparturesCard extends HTMLElement {
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
           ${isNextDay ? `<span class="next-day-badge">Morgen früh</span>` : ''}
-          ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : (leaveMins != null && leaveMins > threshold ? `<span class="leave-soon">Los in ${leaveMins} min</span>` : '')}
+          ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : (leaveMins != null && leaveMins > threshold && leaveMins <= 60 ? `<span class="leave-soon">Los in ${leaveMins} min</span>` : '')}
         </div>
       </div>
     `;

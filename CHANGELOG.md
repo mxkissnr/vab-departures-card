@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.6.1 — 2026-06-11
+
+### Fixed
+- **'Los in X min' hidden for overnight departures** — label now only appears when `leave_in_minutes ≤ 60`; values like "Los in 357 min" no longer shown ([#14](https://github.com/mxkissnr/vab-departures-card/issues/14))
+
 ## v1.6.0 — 2026-06-11
 
 ### Added
