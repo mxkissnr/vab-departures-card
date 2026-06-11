@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.0 — 2026-06-11
+
+### Added
+- Custom color per line number: card editor now shows a color picker for each active line — click to change, ↺ to reset to auto-color ([#6](https://github.com/mxkissnr/vab-departures-card/issues/6))
+
 ## v1.1.3 — 2026-06-11
 
 ### Changed

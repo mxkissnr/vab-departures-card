@@ -9,7 +9,9 @@ const LINE_COLORS = [
   '#d97706', '#16a34a', '#0891b2', '#b45309',
 ];
 
-function lineColor(line) {
+function lineColor(line, config) {
+  const custom = config?.line_colors?.[String(line)];
+  if (custom) return custom;
   let hash = 0;
   for (const c of String(line)) hash = (hash * 31 + c.charCodeAt(0)) & 0xff;
   return LINE_COLORS[hash % LINE_COLORS.length];
@@ -98,7 +100,7 @@ class VabDeparturesCard extends HTMLElement {
   }
 
   _renderRow(dep) {
-    const color  = lineColor(dep.line);
+    const color  = lineColor(dep.line, this._config);
     const mins   = dep.minutes_until ?? 0;
     const delay  = dep.delay_minutes ?? 0;
     const isNow  = mins <= 0;
@@ -191,6 +193,70 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, entities: [...(this._config.entities || []), ''] });
     });
     cfg.appendChild(addBtn);
+
+    // Line colors section
+    const lines = this._collectLines();
+    if (lines.length) {
+      const colorLbl = document.createElement('div');
+      colorLbl.className = 'section-label';
+      colorLbl.textContent = 'Linienfarben';
+      cfg.appendChild(colorLbl);
+      lines.forEach(line => cfg.appendChild(this._makeColorRow(line)));
+    }
+  }
+
+  _collectLines() {
+    const lines = new Set();
+    for (const id of (this._config.entities || [])) {
+      const state = this._hass?.states[id];
+      for (const dep of state?.attributes?.departures || []) {
+        if (dep.line) lines.add(String(dep.line));
+      }
+    }
+    return [...lines].sort((a, b) => (isNaN(a) || isNaN(b) ? a.localeCompare(b) : Number(a) - Number(b)));
+  }
+
+  _makeColorRow(line) {
+    const currentColor = lineColor(line, this._config);
+    const row = document.createElement('div');
+    row.className = 'color-row';
+
+    const badge = document.createElement('div');
+    badge.className = 'color-badge';
+    badge.style.background = currentColor;
+    badge.textContent = line;
+
+    const label = document.createElement('span');
+    label.className = 'color-label';
+    label.textContent = `Linie ${line}`;
+
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'color-input';
+    input.value = currentColor;
+    input.addEventListener('input', e => {
+      badge.style.background = e.target.value;
+    });
+    input.addEventListener('change', e => {
+      const colors = { ...(this._config.line_colors || {}), [line]: e.target.value };
+      this._fire({ ...this._config, line_colors: colors });
+    });
+
+    const reset = document.createElement('button');
+    reset.className = 'color-reset';
+    reset.title = 'Auf Standard zurücksetzen';
+    reset.textContent = '↺';
+    reset.addEventListener('click', () => {
+      const colors = { ...(this._config.line_colors || {}) };
+      delete colors[line];
+      this._fire({ ...this._config, line_colors: Object.keys(colors).length ? colors : undefined });
+    });
+
+    row.appendChild(badge);
+    row.appendChild(label);
+    row.appendChild(input);
+    row.appendChild(reset);
+    return row;
   }
 
   _makeRow(entityId, idx) {
@@ -353,6 +419,33 @@ const EDITOR_STYLES = `
     width: 100%;
   }
   .add-btn:hover { background: var(--primary-color); color: white; }
+  .color-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 0;
+  }
+  .color-badge {
+    min-width: 34px; height: 26px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+  .color-label { flex: 1; font-size: 13px; color: var(--primary-text-color); }
+  .color-input {
+    width: 36px; height: 28px;
+    border: none; border-radius: 6px;
+    padding: 2px; cursor: pointer;
+    background: none;
+  }
+  .color-reset {
+    background: none; border: none;
+    color: var(--secondary-text-color);
+    cursor: pointer; font-size: 16px;
+    padding: 2px 4px; border-radius: 4px;
+  }
+  .color-reset:hover { color: var(--primary-text-color); }
 `;
 
 // ─────────────────────────────────────────────
