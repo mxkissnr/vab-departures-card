@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.0 — 2026-06-11
+
+### Added
+- **Auto-detect VAB sensors** — if `entities` is not configured, the card automatically finds all sensors with a `departures` attribute. Zero config: just add the card and all stops appear ([#9](https://github.com/mxkissnr/vab-departures-card/issues/9))
+- **Progress bar** — 3 px bar at the bottom of each line badge fills up as the departure approaches: green → amber → red. Reference is the furthest departure in the stop's list ([#11](https://github.com/mxkissnr/vab-departures-card/issues/11))
+- **"Morgen früh" badge** — red badge on departures whose effective time is the next calendar day (overnight fetch result) so users immediately see there's no more service tonight ([#10](https://github.com/mxkissnr/vab-departures-card/issues/10))
+
+### Fixed
+- **Row flicker on hover** — card was re-rendering the full DOM on every HA state change, destroying the hover style. Now only re-renders when actual departure data changes ([#12](https://github.com/mxkissnr/vab-departures-card/issues/12))
+
 ## v1.4.0 — 2026-06-11
 
 ### Added

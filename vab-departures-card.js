@@ -46,12 +46,20 @@ class VabDeparturesCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    const entityIds = this._config?.entities?.length
+      ? this._config.entities
+      : this._getVabEntities();
+    const key = entityIds.map(id => {
+      const s = hass.states[id];
+      return s ? JSON.stringify(s.attributes.departures) : 'x';
+    }).join('|');
+    if (key === this._renderKey) return;
+    this._renderKey = key;
     this._render();
   }
 
   setConfig(config) {
-    if (!config.entities?.length) throw new Error('"entities" list required');
-    this._config = config;
+    this._config = config ?? {};
   }
 
   static getConfigElement() {
@@ -59,15 +67,17 @@ class VabDeparturesCard extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { entities: [], title: '' };
+    return { title: '' };
   }
 
   _render() {
     if (!this._hass || !this._config) return;
 
-    const stops = this._config.entities
-      .map(id => this._hass.states[id])
-      .filter(Boolean);
+    const entityIds = this._config.entities?.length
+      ? this._config.entities
+      : this._getVabEntities();
+
+    const stops = entityIds.map(id => this._hass.states[id]).filter(Boolean);
 
     this.shadowRoot.innerHTML = `
       <style>${CARD_STYLES}</style>
@@ -87,8 +97,10 @@ class VabDeparturesCard extends HTMLElement {
       ? `${attrs.stop_name} <span class="dir-label">→ ${dirFilter}</span>`
       : attrs.stop_name;
 
+    const maxMins = Math.max(10, ...departures.map(d => d.minutes_until ?? 0));
+
     const rows = departures.length
-      ? departures.map(d => this._renderRow(d)).join('')
+      ? departures.map(d => this._renderRow(d, maxMins)).join('')
       : '<div class="no-dep">Keine Abfahrten</div>';
 
     return `
@@ -99,7 +111,7 @@ class VabDeparturesCard extends HTMLElement {
     `;
   }
 
-  _renderRow(dep) {
+  _renderRow(dep, maxMins = 30) {
     const color  = lineColor(dep.line, this._config);
     const mins   = dep.minutes_until ?? 0;
     const delay  = dep.delay_minutes ?? 0;
@@ -109,6 +121,13 @@ class VabDeparturesCard extends HTMLElement {
     const threshold = this._config.leave_threshold ?? 2;
     const leaveMins = dep.leave_in_minutes;
     const leaveDue  = leaveMins != null && leaveMins <= threshold;
+
+    const isNextDay = dep.effective
+      && new Date(dep.effective).toDateString() !== new Date().toDateString();
+
+    // Progress bar: fills up as departure approaches (0% = far, 100% = now)
+    const pct = Math.max(0, Math.min(100, (1 - Math.min(mins, maxMins) / maxMins) * 100));
+    const pctColor = pct > 66 ? '#ef4444' : pct > 33 ? '#f59e0b' : '#22c55e';
 
     const delayHtml = delay > 0
       ? `<span class="delay ${delay >= 5 ? 'severe' : ''}">&nbsp;+${delay} min</span>`
@@ -122,7 +141,10 @@ class VabDeparturesCard extends HTMLElement {
       <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
-        <div class="badge" style="background:${color}">${dep.line}</div>
+        <div class="badge" style="background:${color}">
+          ${dep.line}
+          <div class="progress-bar" style="width:${pct}%;background:${pctColor}"></div>
+        </div>
         <div class="middle">
           <span class="direction">${dep.direction}</span>
           ${platformHtml}
@@ -131,6 +153,7 @@ class VabDeparturesCard extends HTMLElement {
           <span class="mins ${isNow ? 'now' : ''}">${fmtMinutes(mins)}</span>
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
+          ${isNextDay ? `<span class="next-day-badge">Morgen früh</span>` : ''}
           ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : (leaveMins != null && leaveMins > threshold ? `<span class="leave-soon">Los in ${leaveMins} min</span>` : '')}
         </div>
       </div>
@@ -372,6 +395,15 @@ const CARD_STYLES = `
     padding: 0 5px;
     flex-shrink: 0;
     letter-spacing: .02em;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    border-radius: 0 0 6px 6px;
+    transition: width .4s ease;
   }
   .middle {
     flex: 1; min-width: 0;
@@ -432,6 +464,13 @@ const CARD_STYLES = `
     font-weight: 600;
     color: var(--secondary-text-color);
     letter-spacing: .02em;
+  }
+  .next-day-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--error-color, #dc2626);
+    letter-spacing: .04em;
+    text-transform: uppercase;
   }
 `;
 
