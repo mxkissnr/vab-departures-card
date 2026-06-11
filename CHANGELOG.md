@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.0 — 2026-06-11
+
+### Added
+- **Walk-time countdown** — when `leave_in_minutes` is available and > `leave_threshold`, each row shows a secondary "Los in X min" label so you see when to leave, not just when the bus departs ([#8](https://github.com/mxkissnr/vab-departures-card/issues/8))
+- **leave_threshold in visual editor** — the walk-time highlight threshold is now configurable directly in the card UI (no YAML needed) ([#8](https://github.com/mxkissnr/vab-departures-card/issues/8))
+
 ## v1.3.0 — 2026-06-11
 
 ### Added

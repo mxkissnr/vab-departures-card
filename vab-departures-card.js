@@ -131,7 +131,7 @@ class VabDeparturesCard extends HTMLElement {
           <span class="mins ${isNow ? 'now' : ''}">${fmtMinutes(mins)}</span>
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
-          ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : ''}
+          ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : (leaveMins != null && leaveMins > threshold ? `<span class="leave-soon">Los in ${leaveMins} min</span>` : '')}
         </div>
       </div>
     `;
@@ -178,6 +178,18 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, title: e.target.value || undefined });
     });
     cfg.appendChild(titleField);
+
+    // Walk-time threshold
+    const thresholdField = document.createElement('ha-textfield');
+    thresholdField.label = 'Gehzeit-Schwelle (Minuten, Standard 2)';
+    thresholdField.type = 'number';
+    thresholdField.value = this._config.leave_threshold ?? 2;
+    thresholdField.style.cssText = 'width:100%;display:block;margin-bottom:12px';
+    thresholdField.addEventListener('change', e => {
+      const val = parseInt(e.target.value);
+      this._fire({ ...this._config, leave_threshold: isNaN(val) ? undefined : val });
+    });
+    cfg.appendChild(thresholdField);
 
     // Label
     const lbl = document.createElement('div');
@@ -414,6 +426,12 @@ const CARD_STYLES = `
   @keyframes leavePulse {
     0%, 100% { opacity: 1; }
     50%       { opacity: .35; }
+  }
+  .leave-soon {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--secondary-text-color);
+    letter-spacing: .02em;
   }
 `;
 
