@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.3 — 2026-06-11
+
+### Changed
+- Minutes display now formats values ≥ 60 as hours: "7h 9min" instead of "429 min" (useful for overnight departures) ([#5](https://github.com/mxkissnr/vab-departures-card/issues/5))
+
 ## v1.1.2 — 2026-06-11
 
 ### Changed

@@ -17,8 +17,10 @@ function lineColor(line) {
 
 function fmtMinutes(mins) {
   if (mins <= 0) return 'jetzt';
-  if (mins === 1) return '1 min';
-  return `${mins} min`;
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
 }
 
 function fmtTime(isoString) {
