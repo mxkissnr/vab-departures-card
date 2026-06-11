@@ -46,9 +46,7 @@ class VabDeparturesCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    const entityIds = this._config?.entities?.length
-      ? this._config.entities
-      : this._getVabEntities();
+    const entityIds = this._resolveEntities();
     const key = entityIds.map(id => {
       const s = hass.states[id];
       return s ? JSON.stringify(s.attributes.departures) : 'x';
@@ -59,7 +57,9 @@ class VabDeparturesCard extends HTMLElement {
   }
 
   setConfig(config) {
-    this._config = config ?? {};
+    const c = config ?? {};
+    // Backwards-compat: if entities already set and auto_entities not explicitly given → manual
+    this._config = { auto_entities: !c.entities?.length, ...c };
   }
 
   static getConfigElement() {
@@ -67,15 +67,19 @@ class VabDeparturesCard extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { title: '' };
+    return { title: '', auto_entities: true };
+  }
+
+  _resolveEntities() {
+    return this._config.auto_entities !== false
+      ? this._getVabEntities()
+      : (this._config.entities || []);
   }
 
   _render() {
     if (!this._hass || !this._config) return;
 
-    const entityIds = this._config.entities?.length
-      ? this._config.entities
-      : this._getVabEntities();
+    const entityIds = this._resolveEntities();
 
     const stops = entityIds.map(id => this._hass.states[id]).filter(Boolean);
 
@@ -167,7 +171,8 @@ class VabDeparturesCard extends HTMLElement {
 
 class VabDeparturesCardEditor extends HTMLElement {
   setConfig(config) {
-    this._config = { entities: [], title: '', ...config };
+    const c = config ?? {};
+    this._config = { entities: [], title: '', auto_entities: !c.entities?.length, ...c };
     this._build();
   }
 
@@ -214,25 +219,45 @@ class VabDeparturesCardEditor extends HTMLElement {
     });
     cfg.appendChild(thresholdField);
 
-    // Label
-    const lbl = document.createElement('div');
-    lbl.className = 'section-label';
-    lbl.textContent = 'Haltestellen-Sensoren';
-    cfg.appendChild(lbl);
+    // Mode toggle: Auto / Manual
+    const modeLbl = document.createElement('div');
+    modeLbl.className = 'section-label';
+    modeLbl.textContent = 'Haltestellen-Modus';
+    cfg.appendChild(modeLbl);
 
-    // Entity rows
-    (this._config.entities || []).forEach((id, idx) => {
-      cfg.appendChild(this._makeRow(id, idx));
+    const isAuto = this._config.auto_entities !== false;
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mode-row';
+    ['Automatisch', 'Manuell'].forEach((label, i) => {
+      const btn = document.createElement('button');
+      btn.className = `mode-btn${(i === 0) === isAuto ? ' active' : ''}`;
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        this._fire({ ...this._config, auto_entities: i === 0 });
+      });
+      modeRow.appendChild(btn);
     });
+    cfg.appendChild(modeRow);
 
-    // Add button
-    const addBtn = document.createElement('button');
-    addBtn.className = 'add-btn';
-    addBtn.textContent = '+ Haltestelle hinzufügen';
-    addBtn.addEventListener('click', () => {
-      this._fire({ ...this._config, entities: [...(this._config.entities || []), ''] });
-    });
-    cfg.appendChild(addBtn);
+    // Entity pickers — only in manual mode
+    if (!isAuto) {
+      const lbl = document.createElement('div');
+      lbl.className = 'section-label';
+      lbl.textContent = 'Haltestellen-Sensoren';
+      cfg.appendChild(lbl);
+
+      (this._config.entities || []).forEach((id, idx) => {
+        cfg.appendChild(this._makeRow(id, idx));
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = '+ Haltestelle hinzufügen';
+      addBtn.addEventListener('click', () => {
+        this._fire({ ...this._config, entities: [...(this._config.entities || []), ''] });
+      });
+      cfg.appendChild(addBtn);
+    }
 
     // Line colors section
     const lines = this._collectLines();
@@ -247,7 +272,10 @@ class VabDeparturesCardEditor extends HTMLElement {
 
   _collectLines() {
     const lines = new Set();
-    for (const id of (this._config.entities || [])) {
+    const ids = this._config.auto_entities !== false
+      ? this._getVabEntities()
+      : (this._config.entities || []);
+    for (const id of ids) {
       const state = this._hass?.states[id];
       for (const dep of state?.attributes?.departures || []) {
         if (dep.line) lines.add(String(dep.line));
@@ -486,6 +514,23 @@ const EDITOR_STYLES = `
     display: flex; align-items: center; gap: 8px;
   }
   .entity-row ha-entity-picker { flex: 1; }
+  .mode-row {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+  .mode-btn {
+    flex: 1; padding: 8px;
+    border: 1px solid var(--divider-color, #ccc);
+    border-radius: 6px;
+    background: none;
+    color: var(--primary-text-color);
+    cursor: pointer; font-size: 13px;
+    transition: background .15s, color .15s;
+  }
+  .mode-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+  }
   .add-btn {
     margin-top: 4px;
     background: none;

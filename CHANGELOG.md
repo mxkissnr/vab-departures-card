@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.6.0 — 2026-06-11
+
+### Added
+- **Auto/Manual mode toggle** — editor now has an "Automatisch / Manuell" toggle. Automatisch shows all VAB sensors found in HA; Manuell shows entity pickers for selecting specific sensors. Backwards-compatible: existing YAML configs with `entities` keep manual behaviour ([#13](https://github.com/mxkissnr/vab-departures-card/issues/13))
+
 ## v1.5.0 — 2026-06-11
 
 ### Added
