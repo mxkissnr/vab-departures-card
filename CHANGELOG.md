@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.1 — 2026-06-11
+
+### Fixed
+- HACS category corrected from `frontend` to `plugin` (HACS v2 compatibility) — add `"filename"` to `hacs.json` and fix README install button URL ([#3](https://github.com/mxkissnr/vab-departures-card/issues/3))
+
 ## v1.1.0 — 2026-06-11
 
 ### Added

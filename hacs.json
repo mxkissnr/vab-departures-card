@@ -1,4 +1,5 @@
 {
   "name": "VAB Departures Card",
-  "render_readme": true
+  "render_readme": true,
+  "filename": "vab-departures-card.js"
 }

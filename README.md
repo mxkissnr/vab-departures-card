@@ -41,7 +41,7 @@
 **Step 1 — Add repository:**
 
 <p>
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=mxkissnr&repository=vab-departures-card&category=frontend">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=mxkissnr&repository=vab-departures-card&category=plugin">
     <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." height="40"/>
   </a>
 </p>
