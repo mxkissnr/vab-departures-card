@@ -106,6 +106,10 @@ class VabDeparturesCard extends HTMLElement {
     const isNow  = mins <= 0;
     const clockTime = fmtTime(dep.effective);
 
+    const threshold = this._config.leave_threshold ?? 2;
+    const leaveMins = dep.leave_in_minutes;
+    const leaveDue  = leaveMins != null && leaveMins <= threshold;
+
     const delayHtml = delay > 0
       ? `<span class="delay ${delay >= 5 ? 'severe' : ''}">&nbsp;+${delay} min</span>`
       : (dep.monitored ? `<span class="on-time">✓</span>` : '');
@@ -115,7 +119,7 @@ class VabDeparturesCard extends HTMLElement {
       : '';
 
     return `
-      <div class="row ${isNow ? 'now-row' : ''}">
+      <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
         <div class="badge" style="background:${color}">${dep.line}</div>
@@ -127,6 +131,7 @@ class VabDeparturesCard extends HTMLElement {
           <span class="mins ${isNow ? 'now' : ''}">${fmtMinutes(mins)}</span>
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
+          ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : ''}
         </div>
       </div>
     `;
@@ -392,6 +397,23 @@ const CARD_STYLES = `
     padding: 8px 16px 12px;
     font-size: 13px;
     color: var(--secondary-text-color);
+  }
+  .leave-now {
+    border-left: 3px solid var(--warning-color, #f59e0b);
+    padding-left: 13px;
+    background: rgba(245,158,11,.06);
+  }
+  .leave-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--warning-color, #f59e0b);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    animation: leavePulse 1.2s ease-in-out infinite;
+  }
+  @keyframes leavePulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .35; }
   }
 `;
 
