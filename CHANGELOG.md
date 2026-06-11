@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.2 — 2026-06-11
+
+### Changed
+- Card editor entity picker now only lists VAB integration sensors (entities with a `departures` attribute) instead of all sensor entities ([#4](https://github.com/mxkissnr/vab-departures-card/issues/4))
+
 ## v1.1.1 — 2026-06-11
 
 ### Fixed

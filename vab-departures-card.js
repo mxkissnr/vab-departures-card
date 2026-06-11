@@ -141,7 +141,18 @@ class VabDeparturesCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this.querySelectorAll('ha-entity-picker').forEach(p => (p.hass = hass));
+    const vabEntities = this._getVabEntities();
+    this.querySelectorAll('ha-entity-picker').forEach(p => {
+      p.hass = hass;
+      p.includeEntities = vabEntities;
+    });
+  }
+
+  _getVabEntities() {
+    if (!this._hass) return [];
+    return Object.keys(this._hass.states).filter(
+      id => 'departures' in (this._hass.states[id].attributes || {})
+    );
   }
 
   _build() {
@@ -185,10 +196,10 @@ class VabDeparturesCardEditor extends HTMLElement {
     row.className = 'entity-row';
 
     const picker = document.createElement('ha-entity-picker');
-    picker.hass   = this._hass;
-    picker.value  = entityId;
-    picker.label  = `Sensor ${idx + 1}`;
-    picker.setAttribute('include-domains', '["sensor"]');
+    picker.hass           = this._hass;
+    picker.value          = entityId;
+    picker.label          = `Sensor ${idx + 1}`;
+    picker.includeEntities = this._getVabEntities();
     picker.addEventListener('value-changed', e => {
       const updated = [...(this._config.entities || [])];
       updated[idx] = e.detail.value;
