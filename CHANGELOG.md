@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.10.3 — 2026-06-12
+
+### Added
+- **Verspätungs-Benachrichtigung für Stern-Abfahrten** — wenn ein markierter Bus Verspätung bekommt, geht eine Push-Notification raus: "+5 min Verspätung. Neue Abfahrt: 14:37 ab Freihofsplatz." Wird erneut gesendet wenn die Verspätung sich ändert, und zurückgesetzt wenn der Bus wieder pünktlich ist ([#25](https://github.com/mxkissnr/vab-departures-card/issues/25))
+
 ## v1.10.2 — 2026-06-12
 
 ### Fixed

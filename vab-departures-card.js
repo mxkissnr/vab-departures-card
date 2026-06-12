@@ -52,7 +52,8 @@ class VabDeparturesCard extends HTMLElement {
     } catch {
       this._starred = new Set();
     }
-    this._notified = new Set();
+    this._notified      = new Set();
+    this._notifiedDelay = new Map();
   }
 
   set hass(hass) {
@@ -258,6 +259,25 @@ class VabDeparturesCard extends HTMLElement {
               notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
             });
           }
+        }
+
+        // Delay notification
+        const delay = dep.delay_minutes ?? 0;
+        if (delay > 0 && this._notifiedDelay.get(k) !== delay) {
+          this._notifiedDelay.set(k, delay);
+          const title   = `Bus ${dep.line} → ${dep.direction}`;
+          const message = `+${delay} min Verspätung. Neue Abfahrt: ${fmtTime(dep.effective)} ab ${stopName}.`;
+          if (mobileService) {
+            this._hass.callService('notify', mobileService, { title, message });
+          } else {
+            this._hass.callService('persistent_notification', 'create', {
+              notification_id: `vab_delay_${k.replace(/[^a-z0-9]/gi, '_')}`,
+              title:           `${title} — Verspätung!`,
+              message,
+            });
+          }
+        } else if (delay === 0) {
+          this._notifiedDelay.delete(k);
         }
       }
     }
