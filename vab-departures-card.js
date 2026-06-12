@@ -51,9 +51,11 @@ class VabDeparturesCard extends HTMLElement {
       const s = hass.states[id];
       return s ? JSON.stringify(s.attributes.departures) : 'x';
     }).join('|');
-    if (key === this._renderKey) return;
-    this._renderKey = key;
-    this._render();
+    if (key !== this._renderKey) {
+      this._renderKey = key;
+      this._render();
+    }
+    this._checkStarNotifications();
   }
 
   setConfig(config) {
@@ -101,10 +103,8 @@ class VabDeparturesCard extends HTMLElement {
       ? `${attrs.stop_name} <span class="dir-label">→ ${dirFilter}</span>`
       : attrs.stop_name;
 
-    const maxMins = Math.max(10, ...departures.map(d => d.minutes_until ?? 0));
-
     const rows = departures.length
-      ? departures.map(d => this._renderRow(d, maxMins)).join('')
+      ? departures.map(d => this._renderRow(d)).join('')
       : '<div class="no-dep">Keine Abfahrten</div>';
 
     return `
@@ -115,11 +115,11 @@ class VabDeparturesCard extends HTMLElement {
     `;
   }
 
-  _renderRow(dep, maxMins = 30) {
-    const color  = lineColor(dep.line, this._config);
-    const mins   = dep.minutes_until ?? 0;
-    const delay  = dep.delay_minutes ?? 0;
-    const isNow  = mins <= 0;
+  _renderRow(dep) {
+    const color     = lineColor(dep.line, this._config);
+    const mins      = dep.minutes_until ?? 0;
+    const delay     = dep.delay_minutes ?? 0;
+    const isNow     = mins <= 0;
     const clockTime = fmtTime(dep.effective);
 
     const threshold = this._config.leave_threshold ?? 2;
@@ -129,9 +129,7 @@ class VabDeparturesCard extends HTMLElement {
     const isNextDay = dep.effective
       && new Date(dep.effective).toDateString() !== new Date().toDateString();
 
-    // Progress bar: fills up as departure approaches (0% = far, 100% = now)
-    const pct = Math.max(0, Math.min(100, (1 - Math.min(mins, maxMins) / maxMins) * 100));
-    const pctColor = pct > 66 ? '#ef4444' : pct > 33 ? '#f59e0b' : '#22c55e';
+    const starred   = (this._config.starred_lines || []).includes(String(dep.line));
 
     const delayHtml = delay > 0
       ? `<span class="delay ${delay >= 5 ? 'severe' : ''}">&nbsp;+${delay} min</span>`
@@ -142,18 +140,16 @@ class VabDeparturesCard extends HTMLElement {
       : '';
 
     return `
-      <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''}">
+      <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
-        <div class="badge" style="background:${color}">
-          ${dep.line}
-          <div class="progress-bar" style="width:${pct}%;background:${pctColor}"></div>
-        </div>
+        <div class="badge" style="background:${color}">${dep.line}</div>
         <div class="middle">
           <span class="direction">${dep.direction}</span>
           ${platformHtml}
         </div>
         <div class="time-col">
+          ${starred ? `<span class="star-icon" title="Beobachtet">★</span>` : ''}
           <span class="mins ${isNow ? 'now' : ''}">${fmtMinutes(mins)}</span>
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
@@ -162,6 +158,32 @@ class VabDeparturesCard extends HTMLElement {
         </div>
       </div>
     `;
+  }
+
+  _checkStarNotifications() {
+    const starred = this._config.starred_lines || [];
+    if (!starred.length || !this._hass) return;
+    const entityIds = this._resolveEntities();
+    for (const id of entityIds) {
+      const deps = this._hass.states[id]?.attributes?.departures || [];
+      for (const dep of deps) {
+        if (!starred.includes(String(dep.line))) continue;
+        const leaveMins = dep.leave_in_minutes;
+        const threshold = this._config.leave_threshold ?? 2;
+        const notifId   = `vab_watch_${dep.line}_${id}`;
+        if (leaveMins != null && leaveMins <= threshold) {
+          this._hass.callService('persistent_notification', 'create', {
+            notification_id: notifId,
+            title: `Bus ${dep.line} — Jetzt losrennen!`,
+            message: `${dep.direction} fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
+          });
+        } else {
+          this._hass.callService('persistent_notification', 'dismiss', {
+            notification_id: notifId,
+          });
+        }
+      }
+    }
   }
 }
 
@@ -259,13 +281,19 @@ class VabDeparturesCardEditor extends HTMLElement {
       cfg.appendChild(addBtn);
     }
 
-    // Line colors section
+    // Line colors + star section
     const lines = this._collectLines();
     if (lines.length) {
       const colorLbl = document.createElement('div');
       colorLbl.className = 'section-label';
-      colorLbl.textContent = 'Linienfarben';
+      colorLbl.textContent = 'Linienfarben & Benachrichtigungen';
       cfg.appendChild(colorLbl);
+
+      const hint = document.createElement('div');
+      hint.className = 'star-hint';
+      hint.textContent = '★ = Benachrichtigung wenn Abfahrt bevorsteht';
+      cfg.appendChild(hint);
+
       lines.forEach(line => cfg.appendChild(this._makeColorRow(line)));
     }
   }
@@ -320,8 +348,20 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, line_colors: Object.keys(colors).length ? colors : undefined });
     });
 
+    const isStarred = (this._config.starred_lines || []).includes(line);
+    const star = document.createElement('button');
+    star.className = `star-btn${isStarred ? ' starred' : ''}`;
+    star.title = isStarred ? 'Benachrichtigung deaktivieren' : 'Benachrichtigung aktivieren';
+    star.textContent = '★';
+    star.addEventListener('click', () => {
+      const current = new Set(this._config.starred_lines || []);
+      current.has(line) ? current.delete(line) : current.add(line);
+      this._fire({ ...this._config, starred_lines: current.size ? [...current] : undefined });
+    });
+
     row.appendChild(badge);
     row.appendChild(label);
+    row.appendChild(star);
     row.appendChild(input);
     row.appendChild(reset);
     return row;
@@ -423,16 +463,13 @@ const CARD_STYLES = `
     padding: 0 5px;
     flex-shrink: 0;
     letter-spacing: .02em;
-    position: relative;
-    overflow: hidden;
   }
-  .progress-bar {
-    position: absolute;
-    bottom: 0; left: 0;
-    height: 3px;
-    border-radius: 0 0 6px 6px;
-    transition: width .4s ease;
+  .star-icon {
+    font-size: 12px;
+    color: var(--warning-color, #f59e0b);
+    line-height: 1;
   }
+  .starred-row { border-left: 3px solid var(--warning-color, #f59e0b); padding-left: 13px; }
   .middle {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column; gap: 1px;
@@ -570,6 +607,20 @@ const EDITOR_STYLES = `
     padding: 2px 4px; border-radius: 4px;
   }
   .color-reset:hover { color: var(--primary-text-color); }
+  .star-btn {
+    background: none; border: none;
+    font-size: 16px; cursor: pointer;
+    color: var(--disabled-color, #9ca3af);
+    padding: 2px 4px; border-radius: 4px;
+    line-height: 1; transition: color .15s;
+  }
+  .star-btn:hover { color: var(--warning-color, #f59e0b); }
+  .star-btn.starred { color: var(--warning-color, #f59e0b); }
+  .star-hint {
+    font-size: 11px;
+    color: var(--secondary-text-color);
+    margin-bottom: 6px;
+  }
 `;
 
 // ─────────────────────────────────────────────

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.0 — 2026-06-11
+
+### Added
+- **Star a line for notifications** — star icon per line in the editor; when a starred departure's `leave_in_minutes ≤ leave_threshold`, a HA persistent notification fires automatically ("Jetzt losrennen! Bus X in Y min"). Dismissed automatically when condition clears ([#16](https://github.com/mxkissnr/vab-departures-card/issues/16))
+- Starred rows get a subtle gold left border in the card
+
+### Removed
+- **Progress bar** removed from line badge — the time column already communicates urgency clearly ([#15](https://github.com/mxkissnr/vab-departures-card/issues/15))
+
 ## v1.6.1 — 2026-06-11
 
 ### Fixed
