@@ -230,7 +230,9 @@ class VabDeparturesCard extends HTMLElement {
     const mobileService = this._config.notify_service;
     const entityIds     = this._resolveEntities();
     for (const id of entityIds) {
-      const deps = this._hass.states[id]?.attributes?.departures || [];
+      const state    = this._hass.states[id];
+      const stopName = state?.attributes?.stop_name || '';
+      const deps     = state?.attributes?.departures || [];
       for (const dep of deps) {
         const k = this._starKey(dep);
         if (!this._starred.has(k)) continue;
@@ -238,16 +240,15 @@ class VabDeparturesCard extends HTMLElement {
         const isDue     = leaveMins != null && leaveMins <= threshold;
         if (isDue && !this._notified.has(k)) {
           this._notified.add(k);
+          const title   = `Bus ${dep.line} → ${dep.direction}`;
+          const message = `Jetzt losrennen! Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}) ab ${stopName}.`;
           if (mobileService) {
-            this._hass.callService('notify', mobileService, {
-              title:   `Bus ${dep.line} → ${dep.direction}`,
-              message: `Jetzt losrennen! Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
-            });
+            this._hass.callService('notify', mobileService, { title, message });
           } else {
             this._hass.callService('persistent_notification', 'create', {
               notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
-              title:           `Bus ${dep.line} → ${dep.direction} — Jetzt losrennen!`,
-              message:         `Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
+              title:           `${title} — Jetzt losrennen!`,
+              message,
             });
           }
         } else if (!isDue) {

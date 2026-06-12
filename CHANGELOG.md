@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.10.2 — 2026-06-12
+
+### Fixed
+- **Haltestelle in Benachrichtigung** — Notification zeigt jetzt "Fährt in X min (HH:MM) ab Freihofsplatz" damit bei mehreren Haltestellen klar ist, von wo der Bus abfährt ([#24](https://github.com/mxkissnr/vab-departures-card/issues/24))
+
 ## v1.10.1 — 2026-06-12
 
 ### Fixed
