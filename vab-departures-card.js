@@ -4,6 +4,10 @@
  * https://github.com/mxkissnr/vab-departures-card
  */
 
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 const LINE_COLORS = [
   '#2563eb', '#7c3aed', '#db2777', '#dc2626',
   '#d97706', '#16a34a', '#0891b2', '#b45309',
@@ -142,10 +146,10 @@ class VabDeparturesCard extends HTMLElement {
   _renderStop(state) {
     const attrs = state.attributes;
     const departures = attrs.departures || [];
-    const dirFilter = (attrs.direction_filter || []).join(' / ');
+    const dirFilter = (attrs.direction_filter || []).map(esc).join(' / ');
     const stopLabel = dirFilter
-      ? `${attrs.stop_name} <span class="dir-label">→ ${dirFilter}</span>`
-      : attrs.stop_name;
+      ? `${esc(attrs.stop_name)} <span class="dir-label">→ ${dirFilter}</span>`
+      : esc(attrs.stop_name);
 
     const collapseKey = state.entity_id;
     const isCollapsed = !this._expanded.has(collapseKey);
@@ -206,17 +210,17 @@ class VabDeparturesCard extends HTMLElement {
       : (dep.monitored ? `<span class="on-time">✓</span>` : '');
 
     const platformHtml = dep.platform
-      ? `<span class="platform">Stg.&nbsp;${dep.platform}</span>`
+      ? `<span class="platform">Stg.&nbsp;${esc(dep.platform)}</span>`
       : '';
 
     return `
       <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}"
-           data-star-line="${dep.line}" data-star-dir="${dep.direction}" data-star-planned="${dep.planned}">
+           data-star-line="${esc(dep.line)}" data-star-dir="${esc(dep.direction)}" data-star-planned="${esc(dep.planned)}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
-        <div class="badge" style="background:${color}">${dep.line}</div>
+        <div class="badge" style="background:${esc(color)}">${esc(dep.line)}</div>
         <div class="middle">
-          <span class="direction">${dep.direction}</span>
+          <span class="direction">${esc(dep.direction)}</span>
           ${platformHtml}
         </div>
         <div class="time-col">

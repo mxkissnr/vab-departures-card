@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.10.5 — 2026-06-12
+
+### Security
+- **XSS-Fix** — API-Daten (Linie, Richtung, Haltestelle, Gleis) werden jetzt vor dem Einfügen in `innerHTML` escaped. Verhindert Code-Ausführung falls die EFA-API manipulierte Werte liefert ([#27](https://github.com/mxkissnr/vab-departures-card/issues/27))
+
 ## v1.10.4 — 2026-06-12
 
 ### Changed
