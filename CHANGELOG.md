@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.1 — 2026-06-11
+
+### Changed
+- Stop sections now **start collapsed by default** — click header to expand ([#18](https://github.com/mxkissnr/vab-departures-card/issues/18))
+
 ## v1.8.0 — 2026-06-11
 
 ### Added

@@ -43,6 +43,7 @@ class VabDeparturesCard extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._collapsed = new Set();
+    this._seen = new Set();
   }
 
   set hass(hass) {
@@ -96,10 +97,14 @@ class VabDeparturesCard extends HTMLElement {
     `;
 
     this.shadowRoot.querySelectorAll('.stop-header.collapsible').forEach(el => {
+      const key = el.dataset.key;
+      if (!this._seen.has(key)) {
+        this._seen.add(key);
+        this._collapsed.add(key);
+      }
       el.addEventListener('click', () => {
-        const key = el.dataset.key;
         this._collapsed.has(key) ? this._collapsed.delete(key) : this._collapsed.add(key);
-        this._renderKey = null; // force re-render
+        this._renderKey = null;
         this._render();
       });
     });
