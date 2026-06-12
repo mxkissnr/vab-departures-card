@@ -42,8 +42,11 @@ class VabDeparturesCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this._collapsed = new Set();
-    this._seen = new Set();
+    try {
+      this._expanded = new Set(JSON.parse(localStorage.getItem('vab-expanded') || '[]'));
+    } catch {
+      this._expanded = new Set();
+    }
   }
 
   set hass(hass) {
@@ -97,13 +100,10 @@ class VabDeparturesCard extends HTMLElement {
     `;
 
     this.shadowRoot.querySelectorAll('.stop-header.collapsible').forEach(el => {
-      const key = el.dataset.key;
-      if (!this._seen.has(key)) {
-        this._seen.add(key);
-        this._collapsed.add(key);
-      }
       el.addEventListener('click', () => {
-        this._collapsed.has(key) ? this._collapsed.delete(key) : this._collapsed.add(key);
+        const key = el.dataset.key;
+        this._expanded.has(key) ? this._expanded.delete(key) : this._expanded.add(key);
+        try { localStorage.setItem('vab-expanded', JSON.stringify([...this._expanded])); } catch {}
         this._renderKey = null;
         this._render();
       });
@@ -119,7 +119,7 @@ class VabDeparturesCard extends HTMLElement {
       : attrs.stop_name;
 
     const collapseKey = state.entity_id;
-    const isCollapsed = this._collapsed.has(collapseKey);
+    const isCollapsed = !this._expanded.has(collapseKey);
     const visible = isCollapsed ? departures.slice(0, 1) : departures;
 
     const rows = visible.length

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.2 — 2026-06-11
+
+### Fixed
+- **Collapse state persists across browser restarts** — expanded stops saved to `localStorage`; default is always collapsed, including newly added stops ([#19](https://github.com/mxkissnr/vab-departures-card/issues/19))
+
 ## v1.8.1 — 2026-06-11
 
 ### Changed
