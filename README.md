@@ -15,7 +15,7 @@
 
 <p align="center">
   Custom Lovelace card for real-time bus and train departures in the <strong>VAB region (Aschaffenburg)</strong>.<br/>
-  Works with the <a href="https://github.com/mxkissnr/ha-vab-integration">ha-vab-integration</a> custom integration.
+  Requires the <a href="https://github.com/mxkissnr/ha-vab-integration"><strong>VAB Abfahrtsmonitor integration</strong></a> — install that first.
 </p>
 
 ---
