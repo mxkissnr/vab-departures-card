@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.10.4 — 2026-06-12
+
+### Changed
+- **Kontextabhängiger Benachrichtigungstext** — statt immer "Jetzt losrennen!" wird der Text je nach Dringlichkeit angepasst: "Sofort losrennen! Du verpasst sonst den Bus." / "In 1 Minute losgehen!" / "Noch X Minuten — jetzt losgehen!" ([#26](https://github.com/mxkissnr/vab-departures-card/issues/26))
+
 ## v1.10.3 — 2026-06-12
 
 ### Added

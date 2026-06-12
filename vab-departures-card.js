@@ -34,6 +34,12 @@ function fmtTime(isoString) {
   } catch { return ''; }
 }
 
+function leaveUrgency(leaveMins) {
+  if (leaveMins <= 0) return 'Sofort losrennen! Du verpasst sonst den Bus.';
+  if (leaveMins === 1) return 'In 1 Minute losgehen!';
+  return `Noch ${leaveMins} Minuten — jetzt losgehen!`;
+}
+
 // ─────────────────────────────────────────────
 //  Card
 // ─────────────────────────────────────────────
@@ -242,7 +248,7 @@ class VabDeparturesCard extends HTMLElement {
         if (isDue && !this._notified.has(k)) {
           this._notified.add(k);
           const title   = `Bus ${dep.line} → ${dep.direction}`;
-          const message = `Jetzt losrennen! Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}) ab ${stopName}.`;
+          const message = `${leaveUrgency(leaveMins)} Fährt um ${fmtTime(dep.effective)} ab ${stopName}.`;
           if (mobileService) {
             this._hass.callService('notify', mobileService, { title, message });
           } else {
