@@ -47,6 +47,11 @@ class VabDeparturesCard extends HTMLElement {
     } catch {
       this._expanded = new Set();
     }
+    try {
+      this._starred = new Set(JSON.parse(localStorage.getItem('vab-starred') || '[]'));
+    } catch {
+      this._starred = new Set();
+    }
   }
 
   set hass(hass) {
@@ -75,6 +80,13 @@ class VabDeparturesCard extends HTMLElement {
 
   static getStubConfig() {
     return { title: '', auto_entities: true };
+  }
+
+  _getVabEntities() {
+    if (!this._hass) return [];
+    return Object.keys(this._hass.states).filter(
+      id => 'departures' in (this._hass.states[id].attributes || {})
+    );
   }
 
   _resolveEntities() {
@@ -106,6 +118,15 @@ class VabDeparturesCard extends HTMLElement {
         try { localStorage.setItem('vab-expanded', JSON.stringify([...this._expanded])); } catch {}
         this._renderKey = null;
         this._render();
+      });
+    });
+
+    this.shadowRoot.querySelectorAll('.row-star').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const row = btn.closest('.row');
+        const dep = { line: row.dataset.starLine, direction: row.dataset.starDir };
+        this._toggleStar(dep);
       });
     });
   }
@@ -144,6 +165,18 @@ class VabDeparturesCard extends HTMLElement {
     `;
   }
 
+  _starKey(dep) {
+    return `${dep.line}|${dep.direction}`;
+  }
+
+  _toggleStar(dep) {
+    const k = this._starKey(dep);
+    this._starred.has(k) ? this._starred.delete(k) : this._starred.add(k);
+    try { localStorage.setItem('vab-starred', JSON.stringify([...this._starred])); } catch {}
+    this._renderKey = null;
+    this._render();
+  }
+
   _renderRow(dep) {
     const color     = lineColor(dep.line, this._config);
     const mins      = dep.minutes_until ?? 0;
@@ -158,7 +191,7 @@ class VabDeparturesCard extends HTMLElement {
     const isNextDay = dep.effective
       && new Date(dep.effective).toDateString() !== new Date().toDateString();
 
-    const starred   = (this._config.starred_lines || []).includes(String(dep.line));
+    const starred = this._starred.has(this._starKey(dep));
 
     const delayHtml = delay > 0
       ? `<span class="delay ${delay >= 5 ? 'severe' : ''}">&nbsp;+${delay} min</span>`
@@ -169,7 +202,8 @@ class VabDeparturesCard extends HTMLElement {
       : '';
 
     return `
-      <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}">
+      <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}"
+           data-star-line="${dep.line}" data-star-dir="${dep.direction}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
         <div class="badge" style="background:${color}">${dep.line}</div>
@@ -178,33 +212,33 @@ class VabDeparturesCard extends HTMLElement {
           ${platformHtml}
         </div>
         <div class="time-col">
-          ${starred ? `<span class="star-icon" title="Beobachtet">★</span>` : ''}
           <span class="mins ${isNow ? 'now' : ''}">${fmtMinutes(mins)}</span>
           ${clockTime ? `<span class="clock-time">${clockTime}</span>` : ''}
           ${delayHtml}
           ${isNextDay ? `<span class="next-day-badge">Morgen früh</span>` : ''}
           ${leaveDue ? `<span class="leave-badge">Jetzt los!</span>` : (leaveMins != null && leaveMins > threshold && leaveMins <= 60 ? `<span class="leave-soon">Los in ${leaveMins} min</span>` : '')}
         </div>
+        <button class="row-star${starred ? ' starred' : ''}" title="${starred ? 'Beobachtung entfernen' : 'Benachrichtigung wenn los'}">★</button>
       </div>
     `;
   }
 
   _checkStarNotifications() {
-    const starred = this._config.starred_lines || [];
-    if (!starred.length || !this._hass) return;
+    if (!this._starred.size || !this._hass) return;
+    const threshold = this._config.leave_threshold ?? 2;
     const entityIds = this._resolveEntities();
     for (const id of entityIds) {
       const deps = this._hass.states[id]?.attributes?.departures || [];
       for (const dep of deps) {
-        if (!starred.includes(String(dep.line))) continue;
+        const k = this._starKey(dep);
+        if (!this._starred.has(k)) continue;
         const leaveMins = dep.leave_in_minutes;
-        const threshold = this._config.leave_threshold ?? 2;
-        const notifId   = `vab_watch_${dep.line}_${id}`;
+        const notifId   = `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`;
         if (leaveMins != null && leaveMins <= threshold) {
           this._hass.callService('persistent_notification', 'create', {
             notification_id: notifId,
-            title: `Bus ${dep.line} — Jetzt losrennen!`,
-            message: `${dep.direction} fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
+            title: `Bus ${dep.line} → ${dep.direction} — Jetzt losrennen!`,
+            message: `Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
           });
         } else {
           this._hass.callService('persistent_notification', 'dismiss', {
@@ -310,18 +344,13 @@ class VabDeparturesCardEditor extends HTMLElement {
       cfg.appendChild(addBtn);
     }
 
-    // Line colors + star section
+    // Line colors section
     const lines = this._collectLines();
     if (lines.length) {
       const colorLbl = document.createElement('div');
       colorLbl.className = 'section-label';
-      colorLbl.textContent = 'Linienfarben & Benachrichtigungen';
+      colorLbl.textContent = 'Linienfarben';
       cfg.appendChild(colorLbl);
-
-      const hint = document.createElement('div');
-      hint.className = 'star-hint';
-      hint.textContent = '★ = Benachrichtigung wenn Abfahrt bevorsteht';
-      cfg.appendChild(hint);
 
       lines.forEach(line => cfg.appendChild(this._makeColorRow(line)));
     }
@@ -377,20 +406,8 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, line_colors: Object.keys(colors).length ? colors : undefined });
     });
 
-    const isStarred = (this._config.starred_lines || []).includes(line);
-    const star = document.createElement('button');
-    star.className = `star-btn${isStarred ? ' starred' : ''}`;
-    star.title = isStarred ? 'Benachrichtigung deaktivieren' : 'Benachrichtigung aktivieren';
-    star.textContent = '★';
-    star.addEventListener('click', () => {
-      const current = new Set(this._config.starred_lines || []);
-      current.has(line) ? current.delete(line) : current.add(line);
-      this._fire({ ...this._config, starred_lines: current.size ? [...current] : undefined });
-    });
-
     row.appendChild(badge);
     row.appendChild(label);
-    row.appendChild(star);
     row.appendChild(input);
     row.appendChild(reset);
     return row;
@@ -504,12 +521,17 @@ const CARD_STYLES = `
     flex-shrink: 0;
     letter-spacing: .02em;
   }
-  .star-icon {
-    font-size: 12px;
-    color: var(--warning-color, #f59e0b);
-    line-height: 1;
-  }
   .starred-row { border-left: 3px solid var(--warning-color, #f59e0b); padding-left: 13px; }
+  .row-star {
+    background: none; border: none; cursor: pointer; padding: 0 0 0 6px;
+    font-size: 14px; line-height: 1;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+    opacity: 0.35;
+    transition: opacity .15s, color .15s;
+  }
+  .row:hover .row-star { opacity: 0.75; }
+  .row-star.starred { color: var(--warning-color, #f59e0b); opacity: 1; }
   .middle {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column; gap: 1px;
@@ -647,20 +669,6 @@ const EDITOR_STYLES = `
     padding: 2px 4px; border-radius: 4px;
   }
   .color-reset:hover { color: var(--primary-text-color); }
-  .star-btn {
-    background: none; border: none;
-    font-size: 16px; cursor: pointer;
-    color: var(--disabled-color, #9ca3af);
-    padding: 2px 4px; border-radius: 4px;
-    line-height: 1; transition: color .15s;
-  }
-  .star-btn:hover { color: var(--warning-color, #f59e0b); }
-  .star-btn.starred { color: var(--warning-color, #f59e0b); }
-  .star-hint {
-    font-size: 11px;
-    color: var(--secondary-text-color);
-    margin-bottom: 6px;
-  }
 `;
 
 // ─────────────────────────────────────────────

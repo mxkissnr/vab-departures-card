@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.9.0 — 2026-06-12
+
+### Changed
+- **Per-Abfahrt Stern statt Linien-Stern** — Sternmarkierung jetzt direkt auf jeder Zeile in der Karte (★ erscheint beim Hover, bleibt bei Aktivierung sichtbar). Markiert eine bestimmte Linie+Richtungs-Kombination, nicht mehr die ganze Linie. Gespeichert in `localStorage` ([#21](https://github.com/mxkissnr/vab-departures-card/issues/21))
+- **Benachrichtigungen auf Linie+Richtung** — HA `persistent_notification` wird ausgelöst wenn eine beobachtete Verbindung `leave_in_minutes ≤ leave_threshold` erreicht; wird automatisch wieder abgebaut wenn die Bedingung nicht mehr gilt
+
+### Removed
+- Stern-Button aus dem visuellen Editor entfernt (`starred_lines` Config-Key obsolet); Benachrichtigungen werden nur noch über den Stern auf der Karte gesteuert
+
 ## v1.8.2 — 2026-06-11
 
 ### Fixed
