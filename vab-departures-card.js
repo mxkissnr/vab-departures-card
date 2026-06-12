@@ -52,6 +52,7 @@ class VabDeparturesCard extends HTMLElement {
     } catch {
       this._starred = new Set();
     }
+    this._notified = new Set();
   }
 
   set hass(hass) {
@@ -225,25 +226,37 @@ class VabDeparturesCard extends HTMLElement {
 
   _checkStarNotifications() {
     if (!this._starred.size || !this._hass) return;
-    const threshold = this._config.leave_threshold ?? 2;
-    const entityIds = this._resolveEntities();
+    const threshold     = this._config.leave_threshold ?? 2;
+    const mobileService = this._config.notify_service;
+    const entityIds     = this._resolveEntities();
     for (const id of entityIds) {
       const deps = this._hass.states[id]?.attributes?.departures || [];
       for (const dep of deps) {
         const k = this._starKey(dep);
         if (!this._starred.has(k)) continue;
         const leaveMins = dep.leave_in_minutes;
-        const notifId   = `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`;
-        if (leaveMins != null && leaveMins <= threshold) {
-          this._hass.callService('persistent_notification', 'create', {
-            notification_id: notifId,
-            title: `Bus ${dep.line} → ${dep.direction} — Jetzt losrennen!`,
-            message: `Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
-          });
-        } else {
-          this._hass.callService('persistent_notification', 'dismiss', {
-            notification_id: notifId,
-          });
+        const isDue     = leaveMins != null && leaveMins <= threshold;
+        if (isDue && !this._notified.has(k)) {
+          this._notified.add(k);
+          if (mobileService) {
+            this._hass.callService('notify', mobileService, {
+              title:   `Bus ${dep.line} → ${dep.direction}`,
+              message: `Jetzt losrennen! Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
+            });
+          } else {
+            this._hass.callService('persistent_notification', 'create', {
+              notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
+              title:           `Bus ${dep.line} → ${dep.direction} — Jetzt losrennen!`,
+              message:         `Fährt in ${dep.minutes_until} min (${fmtTime(dep.effective)}).`,
+            });
+          }
+        } else if (!isDue) {
+          this._notified.delete(k);
+          if (!mobileService) {
+            this._hass.callService('persistent_notification', 'dismiss', {
+              notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
+            });
+          }
         }
       }
     }
@@ -303,6 +316,43 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, leave_threshold: isNaN(val) ? undefined : val });
     });
     cfg.appendChild(thresholdField);
+
+    // Notify service picker
+    const mobileServices = Object.keys(this._hass?.services?.notify || {})
+      .filter(s => s.startsWith('mobile_app_'));
+    if (mobileServices.length) {
+      const notifyLbl = document.createElement('div');
+      notifyLbl.className = 'section-label';
+      notifyLbl.textContent = 'Benachrichtigungs-Gerät';
+      cfg.appendChild(notifyLbl);
+
+      const notifyHint = document.createElement('div');
+      notifyHint.className = 'notify-hint';
+      notifyHint.textContent = 'Push-Notification wenn Stern-Abfahrt bevorsteht (HA Companion App)';
+      cfg.appendChild(notifyHint);
+
+      const notifyRow = document.createElement('div');
+      notifyRow.className = 'notify-row';
+
+      const sel = document.createElement('select');
+      sel.className = 'notify-select';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = '— keins (nur HA-Glocke) —';
+      sel.appendChild(noneOpt);
+      mobileServices.forEach(svc => {
+        const opt = document.createElement('option');
+        opt.value = svc;
+        opt.textContent = svc.replace('mobile_app_', '').replace(/_/g, ' ');
+        if (svc === this._config.notify_service) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', e => {
+        this._fire({ ...this._config, notify_service: e.target.value || undefined });
+      });
+      notifyRow.appendChild(sel);
+      cfg.appendChild(notifyRow);
+    }
 
     // Mode toggle: Auto / Manual
     const modeLbl = document.createElement('div');
@@ -608,6 +658,17 @@ const EDITOR_STYLES = `
     color: var(--secondary-text-color);
     text-transform: uppercase; letter-spacing: .05em;
     margin-top: 4px;
+  }
+  .notify-hint {
+    font-size: 11px; color: var(--secondary-text-color); margin-bottom: 2px;
+  }
+  .notify-row { display: flex; }
+  .notify-select {
+    flex: 1; padding: 8px 10px; border-radius: 6px;
+    border: 1px solid var(--divider-color, #e5e7eb);
+    background: var(--card-background-color);
+    color: var(--primary-text-color);
+    font-size: 14px; cursor: pointer;
   }
   .entity-row {
     display: flex; align-items: center; gap: 8px;

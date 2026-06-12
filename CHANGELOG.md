@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.10.0 — 2026-06-12
+
+### Added
+- **Mobile Push-Benachrichtigungen** — Geräte-Auswahl im Editor: alle `notify.mobile_app_*` Services aus der HA Companion App werden automatisch erkannt und als Dropdown angezeigt. Wenn ein Gerät gewählt ist, wird die Push-Notification direkt aufs Handy geschickt statt in die HA-Glocke ([#22](https://github.com/mxkissnr/vab-departures-card/issues/22))
+- Spam-Schutz: Notification wird nur einmal pro "Jetzt losrennen"-Ereignis gesendet, nicht bei jedem HA-State-Update
+
 ## v1.9.0 — 2026-06-12
 
 ### Changed
