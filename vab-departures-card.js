@@ -126,7 +126,7 @@ class VabDeparturesCard extends HTMLElement {
       btn.addEventListener('click', e => {
         e.stopPropagation();
         const row = btn.closest('.row');
-        const dep = { line: row.dataset.starLine, direction: row.dataset.starDir };
+        const dep = { line: row.dataset.starLine, direction: row.dataset.starDir, planned: row.dataset.starPlanned };
         this._toggleStar(dep);
       });
     });
@@ -167,7 +167,7 @@ class VabDeparturesCard extends HTMLElement {
   }
 
   _starKey(dep) {
-    return `${dep.line}|${dep.direction}`;
+    return `${dep.line}|${dep.direction}|${dep.planned}`;
   }
 
   _toggleStar(dep) {
@@ -204,7 +204,7 @@ class VabDeparturesCard extends HTMLElement {
 
     return `
       <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}"
-           data-star-line="${dep.line}" data-star-dir="${dep.direction}">
+           data-star-line="${dep.line}" data-star-dir="${dep.direction}" data-star-planned="${dep.planned}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
         <div class="badge" style="background:${color}">${dep.line}</div>

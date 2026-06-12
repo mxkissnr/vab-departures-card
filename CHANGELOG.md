@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.10.1 — 2026-06-12
+
+### Fixed
+- **Stern markierte alle Abfahrten der gleichen Linie** — Star-Key enthält jetzt die geplante Abfahrtszeit (`line|direction|planned`), sodass genau die eine angeklickte Abfahrt markiert wird ([#23](https://github.com/mxkissnr/vab-departures-card/issues/23))
+
 ## v1.10.0 — 2026-06-12
 
 ### Added
