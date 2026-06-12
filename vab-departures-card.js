@@ -42,6 +42,7 @@ class VabDeparturesCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this._collapsed = new Set();
   }
 
   set hass(hass) {
@@ -93,24 +94,47 @@ class VabDeparturesCard extends HTMLElement {
         ${!stops.length ? '<div class="empty">Keine Entitäten gefunden.</div>' : ''}
       </ha-card>
     `;
+
+    this.shadowRoot.querySelectorAll('.stop-header.collapsible').forEach(el => {
+      el.addEventListener('click', () => {
+        const key = el.dataset.key;
+        this._collapsed.has(key) ? this._collapsed.delete(key) : this._collapsed.add(key);
+        this._renderKey = null; // force re-render
+        this._render();
+      });
+    });
   }
 
   _renderStop(state) {
     const attrs = state.attributes;
     const departures = attrs.departures || [];
     const dirFilter = (attrs.direction_filter || []).join(' / ');
-    const header = dirFilter
+    const stopLabel = dirFilter
       ? `${attrs.stop_name} <span class="dir-label">→ ${dirFilter}</span>`
       : attrs.stop_name;
 
-    const rows = departures.length
-      ? departures.map(d => this._renderRow(d)).join('')
+    const collapseKey = state.entity_id;
+    const isCollapsed = this._collapsed.has(collapseKey);
+    const visible = isCollapsed ? departures.slice(0, 1) : departures;
+
+    const rows = visible.length
+      ? visible.map(d => this._renderRow(d)).join('')
       : '<div class="no-dep">Keine Abfahrten</div>';
+
+    const chevron = departures.length > 1
+      ? `<span class="chevron">${isCollapsed ? '▶' : '▼'}</span>`
+      : '';
 
     return `
       <div class="stop-section">
-        <div class="stop-header">${header}</div>
+        <div class="stop-header ${departures.length > 1 ? 'collapsible' : ''}"
+             data-key="${collapseKey}">
+          ${chevron}${stopLabel}
+        </div>
         ${rows}
+        ${isCollapsed && departures.length > 1
+          ? `<div class="collapsed-hint">+${departures.length - 1} weitere</div>`
+          : ''}
       </div>
     `;
   }
@@ -427,6 +451,17 @@ const CARD_STYLES = `
     font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
+    color: var(--secondary-text-color);
+  }
+  .stop-header.collapsible {
+    cursor: pointer;
+    user-select: none;
+  }
+  .stop-header.collapsible:hover { color: var(--primary-text-color); }
+  .chevron { margin-right: 5px; font-size: 9px; }
+  .collapsed-hint {
+    padding: 2px 16px 8px;
+    font-size: 11px;
     color: var(--secondary-text-color);
   }
   .dir-label {

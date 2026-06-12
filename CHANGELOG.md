@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.8.0 — 2026-06-11
+
+### Added
+- **Collapsible stop sections** — click the stop header to collapse/expand. Collapsed = only the next departure shown + "+X weitere" hint. State survives re-renders. Saves significant vertical space on large dashboards ([#17](https://github.com/mxkissnr/vab-departures-card/issues/17))
+
 ## v1.7.0 — 2026-06-11
 
 ### Added
