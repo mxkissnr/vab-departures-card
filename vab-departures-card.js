@@ -15,7 +15,8 @@ const LINE_COLORS = [
 
 function lineColor(line, config) {
   const custom = config?.line_colors?.[String(line)];
-  if (custom) return custom;
+  // Only accept hex colors — anything else could inject CSS via the style attribute
+  if (custom && /^#[0-9a-f]{3,8}$/i.test(custom)) return custom;
   let hash = 0;
   for (const c of String(line)) hash = (hash * 31 + c.charCodeAt(0)) & 0xff;
   return LINE_COLORS[hash % LINE_COLORS.length];
@@ -117,7 +118,7 @@ class VabDeparturesCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${CARD_STYLES}</style>
       <ha-card>
-        ${this._config.title ? `<h1 class="card-header">${this._config.title}</h1>` : ''}
+        ${this._config.title ? `<h1 class="card-header">${esc(this._config.title)}</h1>` : ''}
         ${stops.map(s => this._renderStop(s)).join('<div class="stop-divider"></div>')}
         ${!stops.length ? '<div class="empty">Keine Entitäten gefunden.</div>' : ''}
       </ha-card>
@@ -166,7 +167,7 @@ class VabDeparturesCard extends HTMLElement {
     return `
       <div class="stop-section">
         <div class="stop-header ${departures.length > 1 ? 'collapsible' : ''}"
-             data-key="${collapseKey}">
+             data-key="${esc(collapseKey)}">
           ${chevron}${stopLabel}
         </div>
         ${rows}
@@ -238,7 +239,9 @@ class VabDeparturesCard extends HTMLElement {
   _checkStarNotifications() {
     if (!this._starred.size || !this._hass) return;
     const threshold     = this._config.leave_threshold ?? 2;
-    const mobileService = this._config.notify_service;
+    // Only call services that actually exist under the notify domain
+    const cfgService    = this._config.notify_service;
+    const mobileService = cfgService && this._hass.services?.notify?.[cfgService] ? cfgService : null;
     const entityIds     = this._resolveEntities();
     for (const id of entityIds) {
       const state    = this._hass.states[id];

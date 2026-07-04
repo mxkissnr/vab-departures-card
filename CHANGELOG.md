@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.10.6 — 2026-07-04
+
+### Security
+- **Config-XSS-Fix** — `title` und Collapse-Key werden jetzt vor dem Einfügen in `innerHTML` escaped; der Fix aus v1.10.5 deckte nur API-Daten ab, nicht die Karten-Config ([#28](https://github.com/mxkissnr/vab-departures-card/issues/28))
+- **CSS-Injection-Schutz** — `line_colors`-Werte werden als Hex-Farbe validiert (`#rgb` bis `#rrggbbaa`), ungültige Werte fallen auf die Auto-Farbe zurück ([#28](https://github.com/mxkissnr/vab-departures-card/issues/28))
+- **notify_service-Validierung** — Benachrichtigungen werden nur noch an Services geschickt, die tatsächlich unter `notify.*` existieren ([#28](https://github.com/mxkissnr/vab-departures-card/issues/28))
+
 ## v1.10.5 — 2026-06-12
 
 ### Security
