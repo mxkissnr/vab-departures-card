@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.11.0 — 2026-08-16
+
+### Changed
+- **Star notifications moved to the integration (breaking)** — the card no longer runs
+  its own notification logic or stores stars in `localStorage`. The star button now calls
+  the `vab.watch_departure` / `vab.unwatch_departure` services, and star state is rendered
+  from the sensor's new `watched` attribute. Requires
+  [ha-vab-integration](https://github.com/mxkissnr/ha-vab-integration) ≥ 2.1.0. Fixes
+  duplicate notifications across open tabs/devices and stars not syncing across devices
+  ([#18](https://github.com/mxkissnr/ha-vab-integration/issues/18))
+- Closes [#20](https://github.com/mxkissnr/vab-departures-card/issues/20) — per-row star
+  (line + direction + planned time) was already shipped in v1.5.0/v1.6.0
+
+### Added
+- `SECURITY.md`, CodeQL, Dependency Review, OpenSSF Scorecard, Dependabot (GitHub Actions),
+  HACS validation workflow, issue templates, PR template
+
 ## v1.10.6 — 2026-07-04
 
 ### Security

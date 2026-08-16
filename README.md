@@ -117,7 +117,7 @@ Tap the **★** button on any departure row to watch that specific trip:
 - **"Jetzt losrennen!"** — push notification when `leave_in_minutes ≤ leave_threshold`
 - **Verspätung** — push notification when the trip gets a delay, with the new departure time
 
-Stars are saved in `localStorage` and survive browser restarts. To receive push notifications on your phone, configure `notify_service` in the editor (requires the [HA Companion App](https://companion.home-assistant.io/)).
+Watches are stored server-side by the integration (`vab.watch_departure` / `vab.unwatch_departure`), so they survive page reloads and stay in sync across every browser and device — not just the one you starred from. To receive push notifications on your phone, configure `notify_service` in the editor (requires the [HA Companion App](https://companion.home-assistant.io/)); otherwise notifications go to the HA persistent notification bell.
 
 > **When does the notification fire?**  
 > `leave_in_minutes = minutes_until − walk_time`. With walk_time = 5 min and leave_threshold = 2, the notification fires 7 minutes before departure — enough time to leave and catch the bus.
@@ -157,7 +157,7 @@ Stars are saved in `localStorage` and survive browser restarts. To receive push 
 
 ## 📋 Requirements
 
-- [ha-vab-integration](https://github.com/mxkissnr/ha-vab-integration) ≥ v1.2.0 (for walk-time support)
+- [ha-vab-integration](https://github.com/mxkissnr/ha-vab-integration) ≥ v2.1.0 (for star notifications — the card no longer has a client-side fallback)
 
 ---
 

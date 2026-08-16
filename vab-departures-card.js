@@ -39,12 +39,6 @@ function fmtTime(isoString) {
   } catch { return ''; }
 }
 
-function leaveUrgency(leaveMins) {
-  if (leaveMins <= 0) return 'Sofort losrennen! Du verpasst sonst den Bus.';
-  if (leaveMins === 1) return 'In 1 Minute losgehen!';
-  return `Noch ${leaveMins} Minuten — jetzt losgehen!`;
-}
-
 // ─────────────────────────────────────────────
 //  Card
 // ─────────────────────────────────────────────
@@ -58,13 +52,6 @@ class VabDeparturesCard extends HTMLElement {
     } catch {
       this._expanded = new Set();
     }
-    try {
-      this._starred = new Set(JSON.parse(localStorage.getItem('vab-starred') || '[]'));
-    } catch {
-      this._starred = new Set();
-    }
-    this._notified      = new Set();
-    this._notifiedDelay = new Map();
   }
 
   set hass(hass) {
@@ -72,13 +59,12 @@ class VabDeparturesCard extends HTMLElement {
     const entityIds = this._resolveEntities();
     const key = entityIds.map(id => {
       const s = hass.states[id];
-      return s ? JSON.stringify(s.attributes.departures) : 'x';
+      return s ? JSON.stringify(s.attributes.departures) + '|' + JSON.stringify(s.attributes.watched) : 'x';
     }).join('|');
     if (key !== this._renderKey) {
       this._renderKey = key;
       this._render();
     }
-    this._checkStarNotifications();
   }
 
   setConfig(config) {
@@ -139,7 +125,7 @@ class VabDeparturesCard extends HTMLElement {
         e.stopPropagation();
         const row = btn.closest('.row');
         const dep = { line: row.dataset.starLine, direction: row.dataset.starDir, planned: row.dataset.starPlanned };
-        this._toggleStar(dep);
+        this._toggleStar(row.dataset.starEntity, dep);
       });
     });
   }
@@ -147,6 +133,7 @@ class VabDeparturesCard extends HTMLElement {
   _renderStop(state) {
     const attrs = state.attributes;
     const departures = attrs.departures || [];
+    const watched = new Set(attrs.watched || []);
     const dirFilter = (attrs.direction_filter || []).map(esc).join(' / ');
     const stopLabel = dirFilter
       ? `${esc(attrs.stop_name)} <span class="dir-label">→ ${dirFilter}</span>`
@@ -157,7 +144,7 @@ class VabDeparturesCard extends HTMLElement {
     const visible = isCollapsed ? departures.slice(0, 1) : departures;
 
     const rows = visible.length
-      ? visible.map(d => this._renderRow(d)).join('')
+      ? visible.map(d => this._renderRow(d, state.entity_id, watched)).join('')
       : '<div class="no-dep">Keine Abfahrten</div>';
 
     const chevron = departures.length > 1
@@ -182,15 +169,19 @@ class VabDeparturesCard extends HTMLElement {
     return `${dep.line}|${dep.direction}|${dep.planned}`;
   }
 
-  _toggleStar(dep) {
-    const k = this._starKey(dep);
-    this._starred.has(k) ? this._starred.delete(k) : this._starred.add(k);
-    try { localStorage.setItem('vab-starred', JSON.stringify([...this._starred])); } catch {}
-    this._renderKey = null;
-    this._render();
+  _toggleStar(entityId, dep) {
+    if (!this._hass || !entityId) return;
+    const watched = new Set(this._hass.states[entityId]?.attributes?.watched || []);
+    const service = watched.has(this._starKey(dep)) ? 'unwatch_departure' : 'watch_departure';
+    const data = { entity_id: entityId, line: dep.line, direction: dep.direction, planned: dep.planned };
+    if (service === 'watch_departure') {
+      data.leave_threshold = this._config.leave_threshold ?? 2;
+      if (this._config.notify_service) data.notify_service = this._config.notify_service;
+    }
+    this._hass.callService('vab', service, data);
   }
 
-  _renderRow(dep) {
+  _renderRow(dep, entityId, watched) {
     const color     = lineColor(dep.line, this._config);
     const mins      = dep.minutes_until ?? 0;
     const delay     = dep.delay_minutes ?? 0;
@@ -204,7 +195,7 @@ class VabDeparturesCard extends HTMLElement {
     const isNextDay = dep.effective
       && new Date(dep.effective).toDateString() !== new Date().toDateString();
 
-    const starred = this._starred.has(this._starKey(dep));
+    const starred = watched.has(this._starKey(dep));
 
     const delayHtml = delay > 0
       ? `<span class="delay ${delay >= 5 ? 'severe' : ''}">&nbsp;+${delay} min</span>`
@@ -216,7 +207,7 @@ class VabDeparturesCard extends HTMLElement {
 
     return `
       <div class="row ${isNow ? 'now-row' : ''} ${leaveDue ? 'leave-now' : ''} ${starred ? 'starred-row' : ''}"
-           data-star-line="${esc(dep.line)}" data-star-dir="${esc(dep.direction)}" data-star-planned="${esc(dep.planned)}">
+           data-star-entity="${esc(entityId)}" data-star-line="${esc(dep.line)}" data-star-dir="${esc(dep.direction)}" data-star-planned="${esc(dep.planned)}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
         <div class="badge" style="background:${esc(color)}">${esc(dep.line)}</div>
@@ -236,65 +227,6 @@ class VabDeparturesCard extends HTMLElement {
     `;
   }
 
-  _checkStarNotifications() {
-    if (!this._starred.size || !this._hass) return;
-    const threshold     = this._config.leave_threshold ?? 2;
-    // Only call services that actually exist under the notify domain
-    const cfgService    = this._config.notify_service;
-    const mobileService = cfgService && this._hass.services?.notify?.[cfgService] ? cfgService : null;
-    const entityIds     = this._resolveEntities();
-    for (const id of entityIds) {
-      const state    = this._hass.states[id];
-      const stopName = state?.attributes?.stop_name || '';
-      const deps     = state?.attributes?.departures || [];
-      for (const dep of deps) {
-        const k = this._starKey(dep);
-        if (!this._starred.has(k)) continue;
-        const leaveMins = dep.leave_in_minutes;
-        const isDue     = leaveMins != null && leaveMins <= threshold;
-        if (isDue && !this._notified.has(k)) {
-          this._notified.add(k);
-          const title   = `Bus ${dep.line} → ${dep.direction}`;
-          const message = `${leaveUrgency(leaveMins)} Fährt um ${fmtTime(dep.effective)} ab ${stopName}.`;
-          if (mobileService) {
-            this._hass.callService('notify', mobileService, { title, message });
-          } else {
-            this._hass.callService('persistent_notification', 'create', {
-              notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
-              title:           `${title} — Jetzt losrennen!`,
-              message,
-            });
-          }
-        } else if (!isDue) {
-          this._notified.delete(k);
-          if (!mobileService) {
-            this._hass.callService('persistent_notification', 'dismiss', {
-              notification_id: `vab_watch_${k.replace(/[^a-z0-9]/gi, '_')}`,
-            });
-          }
-        }
-
-        // Delay notification
-        const delay = dep.delay_minutes ?? 0;
-        if (delay > 0 && this._notifiedDelay.get(k) !== delay) {
-          this._notifiedDelay.set(k, delay);
-          const title   = `Bus ${dep.line} → ${dep.direction}`;
-          const message = `+${delay} min Verspätung. Neue Abfahrt: ${fmtTime(dep.effective)} ab ${stopName}.`;
-          if (mobileService) {
-            this._hass.callService('notify', mobileService, { title, message });
-          } else {
-            this._hass.callService('persistent_notification', 'create', {
-              notification_id: `vab_delay_${k.replace(/[^a-z0-9]/gi, '_')}`,
-              title:           `${title} — Verspätung!`,
-              message,
-            });
-          }
-        } else if (delay === 0) {
-          this._notifiedDelay.delete(k);
-        }
-      }
-    }
-  }
 }
 
 // ─────────────────────────────────────────────
