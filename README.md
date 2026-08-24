@@ -7,7 +7,7 @@
     <img src="https://img.shields.io/github/v/tag/mxkissnr/vab-departures-card?color=%2341bdf5&label=Version&style=flat-square" alt="Version"/>
   </a>
   <img src="https://img.shields.io/badge/Home%20Assistant-Lovelace%20Card-41bdf5?logo=home-assistant&style=flat-square" alt="Lovelace Card"/>
-  <img src="https://img.shields.io/badge/HACS-Custom-orange?style=flat-square" alt="HACS Custom"/>
+  <img src="https://img.shields.io/badge/Bundled%20in-VAB%20Abfahrtsmonitor%20(HACS)-orange?style=flat-square" alt="Bundled in VAB Abfahrtsmonitor"/>
   <img src="https://img.shields.io/badge/Built%20with-Claude%20by%20Anthropic-D97706?style=flat-square" alt="Built with Claude"/>
 </p>
 
@@ -41,26 +41,11 @@
 
 ## 🚀 Installation
 
-### Via HACS (recommended)
-
-**Step 1 — Add repository:**
-
-<p>
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=mxkissnr&repository=vab-departures-card&category=plugin">
-    <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." height="40"/>
-  </a>
-</p>
-
-Or manually: **HACS → Frontend → ⋮ → Custom repositories** → add `https://github.com/mxkissnr/vab-departures-card` as **Frontend**.
-
-**Step 2 — Restart Home Assistant** (or reload resources).
-
-### Manual
-
-1. Copy `vab-departures-card.js` to `config/www/vab-departures-card.js`
-2. Add it as a Lovelace resource:
-   - **Settings → Dashboards → ⋮ → Resources → + Add resource**
-   - URL: `/local/vab-departures-card.js` · Type: JavaScript module
+> **This card is no longer a separate HACS listing.** It now ships bundled inside
+> [VAB Abfahrtsmonitor](https://github.com/mxkissnr/ha-vab-integration) and is registered
+> automatically as a dashboard resource when you install/update that integration via HACS — no
+> separate card download or manual resource config needed. Just add a
+> `type: custom:vab-departures-card` card to your dashboard after installing the integration.
 
 ---
 
