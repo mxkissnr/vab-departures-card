@@ -79,6 +79,7 @@ type: custom:vab-departures-card
 ```yaml
 type: custom:vab-departures-card
 title: Meine Haltestellen
+theme: swiss-db               # visual design, see Themes below (default: swiss-db)
 auto_entities: true          # auto-detect all VAB sensors (default)
 leave_threshold: 2           # minutes: highlight row when leave_in_minutes ≤ this
 notify_service: mobile_app_iphone  # HA Companion App device for push notifications
@@ -107,6 +108,26 @@ entities:
 | `leave_threshold` | number | `2` | Minutes: "Jetzt los!" badge + notification fires when `leave_in_minutes ≤` this |
 | `notify_service` | string | — | HA notify service name for push notifications, e.g. `mobile_app_iphone`. If not set, notifications go to the HA sidebar bell. |
 | `line_colors` | map | — | Custom hex color per line number, e.g. `"10": "#f97316"` |
+| `theme` | string | `swiss-db` | Visual design, see [Themes](#-themes) below |
+
+### 🎨 Themes
+
+Pick a design from the visual editor's **Design** dropdown, or set `theme:` directly:
+
+| Key | Name | Look |
+|---|---|---|
+| `swiss-db` | Swiss/DB Signage | Light, condensed grotesk, bordered line chips — the default |
+| `led` | LED-Fahrtzielanzeige | Dark, monochrome amber, dot-matrix mono font, blinking delays |
+| `flap` | Split-Flap / Solari Board | Near-black, mechanical amber, monospace |
+| `vignelli` | Vignelli Subway Circles | White, filled colored line circles, bold grotesk |
+| `receipt` | Thermal Ticket Receipt | Off-white, monospace ticket-printer look, dashed dividers |
+| `shelter` | Night Bus Shelter Glow | Dusk navy with warm sodium-lamp glow |
+| `topo` | Alpine Topo Ledger | Earthy tones, serif headers, dashed contour-line dividers |
+| `ledger` | Fahrplanbuch-Ledger | Printed timetable-book look, monospace, ink indigo |
+
+Themes with a single accent color (`led`, `flap`, `receipt`, `shelter`, `topo`, `ledger`) skip
+per-line color-coding; `swiss-db` and `vignelli` still color-code lines automatically (or via
+`line_colors`).
 
 ---
 
