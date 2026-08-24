@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.12.0 — 2026-08-24
+
+### Added
+- **Selectable card themes** — a new `theme` config option (with a matching dropdown in the
+  visual editor) switches the card's entire visual design. Eight themes ship out of the box:
+  `swiss-db` (default), `led`, `flap`, `vignelli`, `receipt`, `shelter`, `topo`, `ledger`. All
+  values are driven by CSS custom properties, so no HA restart or resource re-registration is
+  needed to switch.
+
+### Changed
+- Default look (`swiss-db`) replaces the previous Tailwind-style default colors
+  (`#22c55e`/`#dc2626`/`#f59e0b`) with a condensed-grotesk, bordered line-chip design.
+
 ## v1.11.0 — 2026-08-16
 
 ### Changed

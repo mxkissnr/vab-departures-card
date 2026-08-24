@@ -8,18 +8,276 @@ function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-const LINE_COLORS = [
-  '#2563eb', '#7c3aed', '#db2777', '#dc2626',
-  '#d97706', '#16a34a', '#0891b2', '#b45309',
-];
+const THEMES = {
+  'swiss-db': {
+    label: 'Swiss/DB Signage',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@500;700;800&display=swap');",
+    multiLine: true,
+    lineColors: ['#1a3a5c', '#8b1e3f', '#0f5c4a', '#a34d0e', '#4a4a8f', '#6b5a1f', '#2d5a6b', '#7a2d2d'],
+    vars: {
+      '--vab-font': "'Fira Sans Condensed','Arial Narrow',sans-serif",
+      '--vab-dot-live': '#1a3a5c',
+      '--vab-mins-now': '#c0272d',
+      '--vab-delay': '#b8860b',
+      '--vab-delay-severe': '#c0272d',
+      '--vab-ontime': '#3f6b4f',
+      '--vab-warn': '#b8860b',
+      '--vab-nextday': '#c0272d',
+    },
+  },
+  'led': {
+    label: 'LED-Fahrtzielanzeige',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');",
+    multiLine: false,
+    lineColors: ['#ff8c1a'],
+    vars: {
+      '--vab-font': "'Share Tech Mono',ui-monospace,monospace",
+      '--vab-bg': '#0d0d0d',
+      '--vab-header-color': '#ff8c1a',
+      '--vab-header-transform': 'uppercase',
+      '--vab-header-tracking': '.12em',
+      '--vab-header-weight': '400',
+      '--vab-text': '#ff8c1a',
+      '--vab-text-dim': 'rgba(255,140,26,.5)',
+      '--vab-divider-color': 'rgba(255,140,26,.18)',
+      '--vab-row-hover-bg': 'rgba(255,140,26,.06)',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#ff8c1a',
+      '--vab-dot-planned': 'rgba(255,140,26,.3)',
+      '--vab-glow': '0 0 4px rgba(255,140,26,.7)',
+      '--vab-text-glow': '0 0 6px rgba(255,140,26,.4)',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': '1px solid var(--line-color)',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-badge-weight': '400',
+      '--vab-direction-weight': '400',
+      '--vab-mins-now': '#ff8c1a',
+      '--vab-mins-weight': '400',
+      '--vab-delay': '#ff8c1a',
+      '--vab-delay-severe': '#ff8c1a',
+      '--vab-ontime': 'rgba(255,140,26,.5)',
+      '--vab-warn': '#ff8c1a',
+      '--vab-nextday': '#ff8c1a',
+      '--vab-blink': 'vabBlink 1.2s steps(2) infinite',
+    },
+  },
+  'flap': {
+    label: 'Split-Flap / Solari Board',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');",
+    multiLine: false,
+    lineColors: ['#f5a623'],
+    vars: {
+      '--vab-font': "'Space Mono',ui-monospace,monospace",
+      '--vab-bg': '#161616',
+      '--vab-header-color': '#f5a623',
+      '--vab-header-transform': 'uppercase',
+      '--vab-header-tracking': '.1em',
+      '--vab-header-weight': '700',
+      '--vab-text': '#f5a623',
+      '--vab-text-dim': 'rgba(245,166,35,.55)',
+      '--vab-divider-color': 'rgba(255,255,255,.15)',
+      '--vab-row-hover-bg': 'rgba(245,166,35,.08)',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#f5a623',
+      '--vab-dot-planned': 'rgba(245,166,35,.3)',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': '1.5px solid var(--line-color)',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-badge-weight': '700',
+      '--vab-mins-now': '#f5a623',
+      '--vab-mins-weight': '700',
+      '--vab-delay': '#f5a623',
+      '--vab-delay-severe': '#f5a623',
+      '--vab-ontime': 'rgba(245,166,35,.55)',
+      '--vab-warn': '#f5a623',
+      '--vab-nextday': '#f5a623',
+    },
+  },
+  'vignelli': {
+    label: 'Vignelli Subway Circles',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&display=swap');",
+    multiLine: true,
+    lineColors: ['#0039a6', '#00933c', '#ee352e', '#ff6319', '#b933ad', '#00add0', '#996633', '#808183'],
+    vars: {
+      '--vab-font': "'Archivo',sans-serif",
+      '--vab-bg': '#ffffff',
+      '--vab-header-color': '#111111',
+      '--vab-header-transform': 'uppercase',
+      '--vab-header-tracking': '.08em',
+      '--vab-header-weight': '900',
+      '--vab-text': '#111111',
+      '--vab-text-dim': '#555555',
+      '--vab-divider-color': '#111111',
+      '--vab-row-hover-bg': '#f2f2f2',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#111111',
+      '--vab-dot-planned': '#bbbbbb',
+      '--vab-badge-radius': '50%',
+      '--vab-badge-border': 'none',
+      '--vab-badge-bg': 'var(--line-color)',
+      '--vab-badge-color': '#ffffff',
+      '--vab-badge-weight': '900',
+      '--vab-direction-weight': '600',
+      '--vab-mins-now': '#ee352e',
+      '--vab-mins-weight': '900',
+      '--vab-delay': '#ee352e',
+      '--vab-delay-severe': '#ee352e',
+      '--vab-ontime': '#111111',
+      '--vab-warn': '#ee352e',
+      '--vab-nextday': '#ee352e',
+    },
+  },
+  'receipt': {
+    label: 'Thermal Ticket Receipt',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');",
+    multiLine: false,
+    lineColors: ['#2a2a26'],
+    vars: {
+      '--vab-font': "'Courier Prime',monospace",
+      '--vab-bg': '#f2f0ea',
+      '--vab-header-color': '#2a2a26',
+      '--vab-header-transform': 'uppercase',
+      '--vab-header-tracking': '.1em',
+      '--vab-header-weight': '700',
+      '--vab-text': '#2a2a26',
+      '--vab-text-dim': '#8a8578',
+      '--vab-divider-color': '#b9b6ac',
+      '--vab-divider-style': 'dashed',
+      '--vab-row-hover-bg': '#e9e6dc',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#2a2a26',
+      '--vab-dot-planned': '#c3c0b4',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': 'none',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-badge-weight': '700',
+      '--vab-mins-now': '#b3261e',
+      '--vab-mins-weight': '700',
+      '--vab-delay': '#b3261e',
+      '--vab-delay-severe': '#b3261e',
+      '--vab-ontime': '#5a7c5f',
+      '--vab-warn': '#b3261e',
+      '--vab-nextday': '#b3261e',
+    },
+  },
+  'shelter': {
+    label: 'Night Bus Shelter Glow',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&display=swap');",
+    multiLine: false,
+    lineColors: ['#ffb454'],
+    vars: {
+      '--vab-font': "'Libre Franklin',sans-serif",
+      '--vab-bg': '#131a2e',
+      '--vab-header-color': '#ffb454',
+      '--vab-header-weight': '600',
+      '--vab-text': '#eee7d8',
+      '--vab-text-dim': 'rgba(238,231,216,.55)',
+      '--vab-divider-color': 'rgba(255,180,84,.14)',
+      '--vab-row-hover-bg': 'rgba(255,180,84,.06)',
+      '--vab-dot-live': '#ffb454',
+      '--vab-dot-planned': 'rgba(255,180,84,.3)',
+      '--vab-glow': '0 0 6px 1px rgba(255,180,84,.7)',
+      '--vab-text-glow': '0 0 8px rgba(255,180,84,.5)',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': 'none',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-mins-now': '#ffb454',
+      '--vab-mins-weight': '600',
+      '--vab-delay': '#ff6b4a',
+      '--vab-delay-severe': '#ff6b4a',
+      '--vab-ontime': 'rgba(238,231,216,.6)',
+      '--vab-warn': '#ffb454',
+      '--vab-nextday': '#ff6b4a',
+    },
+  },
+  'topo': {
+    label: 'Alpine Topo Ledger',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Libre+Franklin:wght@400;500;600&display=swap');",
+    multiLine: false,
+    lineColors: ['#4a6741'],
+    vars: {
+      '--vab-font': "'Libre Franklin',sans-serif",
+      '--vab-header-font': "'Fraunces',serif",
+      '--vab-bg': '#efece2',
+      '--vab-header-color': '#26362b',
+      '--vab-header-weight': '600',
+      '--vab-text': '#232620',
+      '--vab-text-dim': '#77705f',
+      '--vab-divider-color': 'rgba(90,60,30,.3)',
+      '--vab-divider-style': 'dashed',
+      '--vab-row-hover-bg': '#e5e1d3',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#4a6741',
+      '--vab-dot-planned': '#b7b2a1',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': '1.5px solid var(--line-color)',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-mins-now': '#a3552e',
+      '--vab-delay': '#a3552e',
+      '--vab-delay-severe': '#a3552e',
+      '--vab-ontime': '#4a6741',
+      '--vab-warn': '#a3552e',
+      '--vab-nextday': '#a3552e',
+    },
+  },
+  'ledger': {
+    label: 'Fahrplanbuch-Ledger',
+    fontImport: "@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap');",
+    multiLine: false,
+    lineColors: ['#2b3a67'],
+    vars: {
+      '--vab-font': "'IBM Plex Mono',monospace",
+      '--vab-bg': '#f7f4ec',
+      '--vab-header-color': '#2b3a67',
+      '--vab-header-transform': 'uppercase',
+      '--vab-header-tracking': '.06em',
+      '--vab-header-weight': '600',
+      '--vab-text': '#1a1a1a',
+      '--vab-text-dim': '#77705f',
+      '--vab-divider-color': 'rgba(26,26,26,.15)',
+      '--vab-row-hover-bg': '#eeebe1',
+      '--vab-dot-radius': '0',
+      '--vab-dot-live': '#2b3a67',
+      '--vab-dot-planned': '#b0ab9c',
+      '--vab-badge-radius': '0',
+      '--vab-badge-border': 'none',
+      '--vab-badge-bg': 'transparent',
+      '--vab-badge-color': 'var(--line-color)',
+      '--vab-badge-weight': '600',
+      '--vab-mins-now': '#b3261e',
+      '--vab-delay': '#b3261e',
+      '--vab-delay-severe': '#b3261e',
+      '--vab-ontime': '#3f6b4f',
+      '--vab-warn': '#2b3a67',
+      '--vab-nextday': '#b3261e',
+    },
+  },
+};
+
+function themeKey(config) {
+  return THEMES[config?.theme] ? config.theme : 'swiss-db';
+}
+
+function themeVarsCss(key) {
+  const t = THEMES[key] || THEMES['swiss-db'];
+  const decls = Object.entries(t.vars).map(([k, v]) => `${k}: ${v};`).join(' ');
+  return `${t.fontImport}\n  ha-card.theme-${key} { ${decls} }`;
+}
 
 function lineColor(line, config) {
+  const theme = THEMES[themeKey(config)];
   const custom = config?.line_colors?.[String(line)];
   // Only accept hex colors — anything else could inject CSS via the style attribute
   if (custom && /^#[0-9a-f]{3,8}$/i.test(custom)) return custom;
+  if (!theme.multiLine) return theme.lineColors[0];
   let hash = 0;
   for (const c of String(line)) hash = (hash * 31 + c.charCodeAt(0)) & 0xff;
-  return LINE_COLORS[hash % LINE_COLORS.length];
+  return theme.lineColors[hash % theme.lineColors.length];
 }
 
 function fmtMinutes(mins) {
@@ -101,9 +359,11 @@ class VabDeparturesCard extends HTMLElement {
 
     const stops = entityIds.map(id => this._hass.states[id]).filter(Boolean);
 
+    const theme = themeKey(this._config);
+
     this.shadowRoot.innerHTML = `
-      <style>${CARD_STYLES}</style>
-      <ha-card>
+      <style>${themeVarsCss(theme)}${CARD_STYLES}</style>
+      <ha-card class="theme-${theme}">
         ${this._config.title ? `<h1 class="card-header">${esc(this._config.title)}</h1>` : ''}
         ${stops.map(s => this._renderStop(s)).join('<div class="stop-divider"></div>')}
         ${!stops.length ? '<div class="empty">Keine Entitäten gefunden.</div>' : ''}
@@ -210,7 +470,7 @@ class VabDeparturesCard extends HTMLElement {
            data-star-entity="${esc(entityId)}" data-star-line="${esc(dep.line)}" data-star-dir="${esc(dep.direction)}" data-star-planned="${esc(dep.planned)}">
         <div class="dot ${dep.monitored ? 'live' : 'planned'}"
              title="${dep.monitored ? 'Live' : 'Fahrplan'}"></div>
-        <div class="badge" style="background:${esc(color)}">${esc(dep.line)}</div>
+        <div class="badge" style="--line-color:${esc(color)}">${esc(dep.line)}</div>
         <div class="middle">
           <span class="direction">${esc(dep.direction)}</span>
           ${platformHtml}
@@ -270,6 +530,27 @@ class VabDeparturesCardEditor extends HTMLElement {
       this._fire({ ...this._config, title: e.target.value || undefined });
     });
     cfg.appendChild(titleField);
+
+    // Theme picker
+    const themeLbl = document.createElement('div');
+    themeLbl.className = 'section-label';
+    themeLbl.textContent = 'Design';
+    cfg.appendChild(themeLbl);
+
+    const themeSel = document.createElement('select');
+    themeSel.className = 'notify-select';
+    themeSel.style.cssText = 'width:100%;display:block;margin-bottom:12px';
+    Object.entries(THEMES).forEach(([key, t]) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = t.label;
+      if (key === themeKey(this._config)) opt.selected = true;
+      themeSel.appendChild(opt);
+    });
+    themeSel.addEventListener('change', e => {
+      this._fire({ ...this._config, theme: e.target.value });
+    });
+    cfg.appendChild(themeSel);
 
     // Walk-time threshold
     const thresholdField = document.createElement('ha-textfield');
@@ -474,12 +755,19 @@ class VabDeparturesCardEditor extends HTMLElement {
 // ─────────────────────────────────────────────
 
 const CARD_STYLES = `
-  ha-card { overflow:hidden; padding:0; }
+  ha-card {
+    overflow:hidden; padding:0;
+    background: var(--vab-bg, var(--card-background-color));
+    font-family: var(--vab-font, 'Fira Sans Condensed', 'Arial Narrow', sans-serif);
+  }
   .card-header {
     padding: 16px 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--primary-text-color);
+    font-size: 17px;
+    font-family: var(--vab-header-font, var(--vab-font, inherit));
+    font-weight: var(--vab-header-weight, 800);
+    letter-spacing: var(--vab-header-tracking, .02em);
+    text-transform: var(--vab-header-transform, none);
+    color: var(--vab-header-color, var(--primary-text-color));
     margin: 0;
   }
   .stop-section { padding-bottom: 4px; }
@@ -489,18 +777,18 @@ const CARD_STYLES = `
     font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
   }
   .stop-header.collapsible {
     cursor: pointer;
     user-select: none;
   }
-  .stop-header.collapsible:hover { color: var(--primary-text-color); }
+  .stop-header.collapsible:hover { color: var(--vab-text, var(--primary-text-color)); }
   .chevron { margin-right: 5px; font-size: 9px; }
   .collapsed-hint {
     padding: 2px 16px 8px;
     font-size: 11px;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
   }
   .dir-label {
     font-weight: 400;
@@ -508,8 +796,8 @@ const CARD_STYLES = `
     letter-spacing: 0;
   }
   .stop-divider {
-    height: 1px;
-    background: var(--divider-color, rgba(0,0,0,.12));
+    height: 0;
+    border-top: 1px var(--vab-divider-style, solid) var(--vab-divider-color, var(--divider-color, #1a1a1a));
     margin: 4px 0;
   }
   .row {
@@ -517,101 +805,111 @@ const CARD_STYLES = `
     align-items: center;
     gap: 10px;
     padding: 8px 16px;
-    transition: background .15s;
+    transition: background .1s;
   }
-  .row:hover { background: var(--secondary-background-color); }
+  .row:hover { background: var(--vab-row-hover-bg, var(--secondary-background-color)); }
   .dot {
     width: 7px; height: 7px;
-    border-radius: 50%;
+    border-radius: var(--vab-dot-radius, 1px);
     flex-shrink: 0;
   }
-  .dot.live    { background: #22c55e; }
-  .dot.planned { background: var(--disabled-color, #9ca3af); }
+  .dot.live    { background: var(--vab-dot-live, #1a3a5c); box-shadow: var(--vab-glow, none); }
+  .dot.planned { background: var(--vab-dot-planned, var(--disabled-color, #9ca3af)); }
   .badge {
-    min-width: 34px; height: 26px;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 12px; font-weight: 800;
+    min-width: 32px; height: 24px;
+    border-radius: var(--vab-badge-radius, 2px);
+    border: var(--vab-badge-border, 1.5px solid var(--line-color));
+    background: var(--vab-badge-bg, transparent);
+    color: var(--vab-badge-color, var(--line-color));
+    font-size: 13px; font-weight: var(--vab-badge-weight, 800);
     display: flex; align-items: center; justify-content: center;
     padding: 0 5px;
     flex-shrink: 0;
     letter-spacing: .02em;
   }
-  .starred-row { border-left: 3px solid var(--warning-color, #f59e0b); padding-left: 13px; }
+  .starred-row { border-left: 3px solid var(--vab-warn, #b8860b); padding-left: 13px; }
   .row-star {
     background: none; border: none; cursor: pointer; padding: 0 0 0 6px;
     font-size: 14px; line-height: 1;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
     flex-shrink: 0;
     opacity: 0.35;
     transition: opacity .15s, color .15s;
   }
   .row:hover .row-star { opacity: 0.75; }
-  .row-star.starred { color: var(--warning-color, #f59e0b); opacity: 1; }
+  .row-star.starred { color: var(--vab-warn, #b8860b); opacity: 1; }
   .middle {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column; gap: 1px;
   }
   .direction {
-    font-size: 14px;
-    color: var(--primary-text-color);
+    font-size: 15px;
+    font-weight: var(--vab-direction-weight, 500);
+    color: var(--vab-text, var(--primary-text-color));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .platform { font-size: 11px; color: var(--secondary-text-color); }
+  .platform { font-size: 11px; color: var(--vab-text-dim, var(--secondary-text-color)); }
   .time-col {
     text-align: right;
     flex-shrink: 0;
     display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
   }
   .mins {
-    font-size: 17px; font-weight: 700;
-    color: var(--primary-text-color);
+    font-size: 18px; font-weight: var(--vab-mins-weight, 700);
+    font-variant-numeric: tabular-nums;
+    color: var(--vab-text, var(--primary-text-color));
     line-height: 1.1;
   }
-  .mins.now  { color: var(--error-color, #dc2626); }
-  .now-row .mins { color: var(--error-color, #dc2626); }
+  .mins.now, .now-row .mins {
+    color: var(--vab-mins-now, #c0272d);
+    text-shadow: var(--vab-text-glow, none);
+    animation: var(--vab-blink, none);
+  }
   .clock-time {
     font-size: 11px;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
     letter-spacing: .02em;
   }
-  .delay       { font-size: 11px; font-weight: 600; color: var(--warning-color, #f59e0b); }
-  .delay.severe{ color: var(--error-color, #dc2626); }
-  .on-time     { font-size: 11px; color: #22c55e; font-weight: 600; }
+  .delay       { font-size: 11px; font-weight: 600; color: var(--vab-delay, #b8860b); animation: var(--vab-blink, none); }
+  .delay.severe{ color: var(--vab-delay-severe, #c0272d); }
+  .on-time     { font-size: 11px; color: var(--vab-ontime, #3f6b4f); font-weight: 600; }
   .no-dep, .empty {
     padding: 8px 16px 12px;
     font-size: 13px;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
   }
   .leave-now {
-    border-left: 3px solid var(--warning-color, #f59e0b);
+    border-left: 3px solid var(--vab-warn, #b8860b);
     padding-left: 13px;
-    background: rgba(245,158,11,.06);
+    background: var(--vab-row-hover-bg, var(--secondary-background-color));
   }
   .leave-badge {
     font-size: 10px;
     font-weight: 700;
-    color: var(--warning-color, #f59e0b);
+    color: var(--vab-warn, #b8860b);
     letter-spacing: .04em;
     text-transform: uppercase;
-    animation: leavePulse 1.2s ease-in-out infinite;
+    animation: var(--vab-blink, leavePulse 1.2s ease-in-out infinite);
   }
   @keyframes leavePulse {
     0%, 100% { opacity: 1; }
     50%       { opacity: .35; }
   }
+  @keyframes vabBlink {
+    50% { opacity: .25; }
+  }
   .leave-soon {
     font-size: 10px;
     font-weight: 600;
-    color: var(--secondary-text-color);
+    color: var(--vab-text-dim, var(--secondary-text-color));
     letter-spacing: .02em;
   }
   .next-day-badge {
     font-size: 10px;
     font-weight: 700;
-    color: var(--error-color, #dc2626);
+    color: var(--vab-nextday, #c0272d);
     letter-spacing: .04em;
     text-transform: uppercase;
   }
