@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.12.1 — 2026-10-08
+
+### Fixed
+- **Card sometimes showed a configuration error instead of departures** — the card now registers
+  itself only after the Home Assistant frontend has finished starting, so it loads reliably
+  ([#39](https://github.com/mxkissnr/vab-departures-card/issues/39)).
+
 ## v1.12.0 — 2026-08-24
 
 ### Added
